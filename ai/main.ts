@@ -4,7 +4,7 @@ import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { MemoryVectorStore } from "@langchain/classic/vectorstores/memory";
 import { Document } from "@langchain/core/documents";
 // import { z } from "zod";
-import { generalSearch, getLinkContent } from "./search.js";
+import { generalSearch, getLinkContent } from "./search";
 import { mdToPdf } from "md-to-pdf";
 import fs from "fs";
 
