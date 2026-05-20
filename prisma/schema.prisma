@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Topic {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  description String?
+  createdAt   DateTime   @default(now())
+  summary     String?
+  questions   Question[]
+}
+
+model Question {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String
+  description String
+  topicId     String   @db.Uuid
+  createdAt   DateTime @default(now())
+  summary     String?
+  index       Int?
+  topic       Topic    @relation(fields: [topicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Source      Source?
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Source {
+  question_id String   @id @db.Uuid
+  title       String
+  summary     String?
+  url         String?
+  index       Int?
+  Question    Question @relation(fields: [question_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
