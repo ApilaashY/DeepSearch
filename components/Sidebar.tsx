@@ -1,7 +1,7 @@
 "use client";
 
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { addTopic } from "@/lib/redux/slices/topicSlice";
+import { addTopics } from "@/lib/redux/slices/topicSlice";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -13,12 +13,12 @@ export default function Sidebar() {
   // fetch all topics from db and add to redux store on initial load
   useEffect(() => {
     fetch("/api/topic/get", {
-      method: "POST",
+      method: "GET",
       headers: { "Content-Type": "application/json" },
     })
       .then((res) => res.json())
       .then((data) => {
-        dispatch(addTopic(data));
+        dispatch(addTopics(data));
       });
     console.log(searchTopics);
   }, []);

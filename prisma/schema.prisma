@@ -18,21 +18,19 @@ model Topic {
 model Question {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   title       String
-  description String
+  description String?
   topicId     String   @db.Uuid
   createdAt   DateTime @default(now())
   summary     String?
-  index       Int?
   topic       Topic    @relation(fields: [topicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Source      Source?
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Source {
-  question_id String   @id @db.Uuid
-  title       String
-  summary     String?
-  url         String?
-  index       Int?
-  Question    Question @relation(fields: [question_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  questionId String   @id @db.Uuid
+  title      String
+  summary    String?
+  url        String?
+  Question   Question @relation(fields: [questionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
