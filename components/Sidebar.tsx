@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { addTopics } from "@/lib/redux/slices/topicSlice";
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
+import { addTopics } from '@/lib/redux/slices/topicSlice';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 export default function Sidebar() {
   const searchTopics = useAppSelector((state) => state.topics.topics);
@@ -12,9 +12,9 @@ export default function Sidebar() {
 
   // fetch all topics from db and add to redux store on initial load
   useEffect(() => {
-    fetch("/api/topic/get", {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
+    fetch('/api/topic/get', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
     })
       .then((res) => res.json())
       .then((data) => {
@@ -32,17 +32,12 @@ export default function Sidebar() {
       {/* Title */}
       <Link href="/app" className="flex flex-col gap-1">
         <h1 className="text-3xl font-bold">DeepAgent</h1>
-        <h3 className="text-sm font-semibold text-[#d0d0d0]">
-          Research Console
-        </h3>
+        <h3 className="text-sm font-semibold text-[#d0d0d0]">Research Console</h3>
       </Link>
 
       {/* Create New Topic */}
       <div className="flex flex-col gap-2">
-        <Link
-          href="/app"
-          className="text-md font-semibold cursor-pointer hover:text-[#d0d0d0]"
-        >
+        <Link href="/app" className="text-md font-semibold cursor-pointer hover:text-[#d0d0d0]">
           Create New
         </Link>
       </div>
@@ -56,7 +51,7 @@ export default function Sidebar() {
           ) : (
             topics.map((topic) => (
               <Link
-                href={`/app/${topic.id}`}
+                href={`/app/topic_${topic.id}`}
                 key={topic.id}
                 className="text-sm cursor-pointer hover:text-[#d0d0d0] truncate"
               >

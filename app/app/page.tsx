@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { addTopics } from "@/lib/redux/slices/topicSlice";
-import { useRouter } from "next/navigation";
+import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
+import { addTopics } from '@/lib/redux/slices/topicSlice';
+import { useRouter } from 'next/navigation';
 
 export default function Page() {
   const topics = useAppSelector((state) => state.topics.topics);
@@ -10,24 +10,24 @@ export default function Page() {
   const router = useRouter();
 
   const createNewTopic = async () => {
-    console.log("Creating new topic...");
+    console.log('Creating new topic...');
 
-    let name: string | null = prompt("Enter topic name:");
+    let name: string | null = prompt('Enter topic name:');
 
-    while (name !== null && name.trim() === "") {
+    while (name !== null && name.trim() === '') {
       // Keep asking while the input is empty but stop if asked to cancel
-      name = prompt("Enter topic name:");
+      name = prompt('Enter topic name:');
     }
 
     // If user cancelled the prompt, stop
-    if (name === null || name.trim() === "") return;
+    if (name === null || name.trim() === '') return;
 
     // Create the topic using the API call
 
     try {
-      const result = await fetch("/api/topic/create", {
-        method: "POST",
-        body: JSON.stringify({ name, description: "" }),
+      const result = await fetch('/api/topic/create', {
+        method: 'POST',
+        body: JSON.stringify({ name, description: '' }),
       });
 
       const data = await result.json();
@@ -36,10 +36,10 @@ export default function Page() {
       dispatch(addTopics([data]));
 
       // Navigate away using the ID from the database
-      router.push(`/app/${data.id}`);
+      router.push(`/app/topic_${data.id}`);
     } catch (error) {
-      console.error("Failed to create topic via thunk:", error);
-      alert("Failed to create topic. Please try again.");
+      console.error('Failed to create topic via thunk:', error);
+      alert('Failed to create topic. Please try again.');
     }
   };
 

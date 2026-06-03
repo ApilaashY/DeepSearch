@@ -10,15 +10,15 @@ export interface Topic {
   pending: boolean;
 }
 
-const defaultTopic: Topic = {
-  id: "",
-  name: "",
-  description: "",
+export const defaultTopic: Topic = {
+  id: '',
+  name: '',
+  description: '',
   questions: [],
-  summary: "",
+  summary: '',
   pending: false,
-  type: "topic",
-}
+  type: 'topic',
+};
 
 export interface Question {
   type: 'question';
@@ -31,16 +31,16 @@ export interface Question {
   pending: boolean;
 }
 
-const defaultQuestion: Question = {
-  id: "",
-  title: "",
-  description: "",
+export const defaultQuestion: Question = {
+  id: '',
+  title: '',
+  description: '',
   questions: [],
   sources: [],
-  summary: "",
+  summary: '',
   pending: false,
-  type: "question",
-}
+  type: 'question',
+};
 
 export interface Source {
   type: 'source';
@@ -51,14 +51,14 @@ export interface Source {
   pending: boolean;
 }
 
-const defaultSource: Source = {
-  title: "",
-  url: "",
-  summary: "",
-  questionId: "",
+export const defaultSource: Source = {
+  title: '',
+  url: '',
+  summary: '',
+  questionId: '',
   pending: false,
-  type: "source",
-}
+  type: 'source',
+};
 
 export interface TopicState {
   topics: Topic[];
@@ -74,7 +74,7 @@ export const topicSlice = createSlice({
   reducers: {
     addTopics: (state, action: PayloadAction<Topic[]>) => {
       action.payload.forEach((topic) => {
-        const existing = state.topics.findIndex(t => t.id === topic.id);
+        const existing = state.topics.findIndex((t) => t.id === topic.id);
 
         if (existing !== -1) {
           state.topics[existing] = topic;

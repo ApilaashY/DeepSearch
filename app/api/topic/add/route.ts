@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
+import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -7,81 +7,60 @@ export async function POST(request: NextRequest) {
 
     console.log(body);
 
-    const {id, type, data} = body;
+    const { id, type, data } = body;
 
-    // Split the id
-    const rootId = id.split("/")[0];
-    const nestedPath = id.split("/").slice(1);
+    const underscoreIndex = id.indexOf('_');
+
+    if (underscoreIndex === -1) {
+      return NextResponse.json({ error: 'Invalid route id.' }, { status: 400 });
+    }
+
+    const parentType = id.slice(0, underscoreIndex);
+    const parentId = id.slice(underscoreIndex + 1);
     let parentQuestion: string | undefined = undefined;
-    let parentCount: number = 0;
 
-    // Find the topic/questions in the database
-    if (nestedPath.length === 0) {
-      const topic = await prisma.topic.findUnique({ where: { id: rootId } });
+    if (parentType === 'topic') {
+      const topic = await prisma.topic.findUnique({ where: { id: parentId } });
 
       if (!topic) {
-        return NextResponse.json(
-          { error: "Topic not found." },
-          { status: 404 },
-        );
+        return NextResponse.json({ error: 'Topic not found.' }, { status: 404 });
       }
 
       parentQuestion = topic.id;
-      parentCount = topic.count;
+    } else if (parentType === 'question') {
+      const question = await prisma.question.findUnique({ where: { id: parentId } });
+
+      if (!question) {
+        return NextResponse.json({ error: 'Question not found.' }, { status: 404 });
+      }
+
+      parentQuestion = question.id;
     } else {
-        let item = undefined;
-
-        for (const index of nestedPath) {
-            item = await prisma.question.findMany({where: {topicId: rootId, index: parseInt(index)}})
-
-            if (item === undefined) {
-                return NextResponse.json(
-                    { error: "Topic not found." },
-                    { status: 404 },
-                );
-            }
-            item = item[0];
-        }
-
-        if (item === undefined) {
-            return NextResponse.json(
-                { error: "Topic not found." },
-                { status: 404 },
-            );
-        }
-
-        parentQuestion = item.id;
-        parentCount = item.count;
+      return NextResponse.json({ error: 'Unsupported parent route.' }, { status: 400 });
     }
 
-
     // Create the new question/source
-    if (type === "question") {
-        const question = await prisma.question.create({
-            data: {
-                title: data.title,
-                index: parentCount,
-                topicId: parentQuestion,
-            }
-        });
+    if (type === 'question') {
+      const question = await prisma.question.create({
+        data: {
+          title: data.title,
+          topicId: parentQuestion,
+        },
+      });
 
-        return NextResponse.json({index: question.index + ""}, {status: 200});
+      return NextResponse.json({ id: question.id, type: 'question' }, { status: 200 });
     } else {
-        const source = await prisma.source.create({
-            data: {
-                title: data.title,
-                index: parentCount,
-                questionId: parentQuestion,
-            }
-        });
+      const source = await prisma.source.create({
+        data: {
+          title: data.title,
+          questionId: parentQuestion,
+        },
+      });
 
-        return NextResponse.json({index: source.index + ""}, {status: 200});
+      return NextResponse.json({ id: source.questionId, type: 'source' }, { status: 200 });
     }
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { error: "Failed to create topic." },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Failed to create topic.' }, { status: 500 });
   }
 }
