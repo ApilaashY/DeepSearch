@@ -83,14 +83,14 @@ function findQuestionInTree(topic: Topic, questionId: string): Question | undefi
 
 function findSourceInTree(topic: Topic, sourceId: string): Source | undefined {
   for (const question of topic.questions) {
-    const directSource = question.sources?.find((source) => source.questionId === sourceId);
+    const directSource = question.sources?.find((source) => source.parentId === sourceId);
 
     if (directSource !== undefined) {
       return directSource;
     }
 
     for (const childQuestion of question.questions ?? []) {
-      const nestedSource = childQuestion.sources?.find((source) => source.questionId === sourceId);
+      const nestedSource = childQuestion.sources?.find((source) => source.parentId === sourceId);
 
       if (nestedSource !== undefined) {
         return nestedSource;

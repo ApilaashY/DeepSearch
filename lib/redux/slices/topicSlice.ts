@@ -43,19 +43,21 @@ export const defaultQuestion: Question = {
 };
 
 export interface Source {
+  id: string;
   type: 'source';
   title: string;
   url: string;
   summary: string;
-  questionId: string;
+  parentId: string;
   pending: boolean;
 }
 
 export const defaultSource: Source = {
+  id: '',
   title: '',
   url: '',
   summary: '',
-  questionId: '',
+  parentId: '',
   pending: false,
   type: 'source',
 };

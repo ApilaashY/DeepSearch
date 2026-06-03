@@ -13,6 +13,7 @@ model Topic {
   createdAt   DateTime   @default(now())
   summary     String?
   questions   Question[]
+  Source      Source[]
 }
 
 model Question {
@@ -23,14 +24,16 @@ model Question {
   createdAt   DateTime @default(now())
   summary     String?
   topic       Topic    @relation(fields: [topicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Source      Source?
+  Source      Source[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Source {
-  questionId String   @id @db.Uuid
-  title      String
-  summary    String?
-  url        String?
-  Question   Question @relation(fields: [questionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title    String
+  summary  String?
+  url      String?
+  parentId String?   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  Question Question? @relation(fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Topic    Topic?    @relation(fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Source_parentId_fkey1")
 }

@@ -53,11 +53,11 @@ export async function POST(request: NextRequest) {
       const source = await prisma.source.create({
         data: {
           title: data.title,
-          questionId: parentQuestion,
+          parentId: parentQuestion,
         },
       });
 
-      return NextResponse.json({ id: source.questionId, type: 'source' }, { status: 200 });
+      return NextResponse.json({ id: source.parentId, type: 'source' }, { status: 200 });
     }
   } catch (error) {
     console.error(error);

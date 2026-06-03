@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
 import { useResolvedTopicNode } from '@/lib/redux/useResolvedTopicNode';
-import { Topic, Question } from '@/lib/redux/slices/topicSlice';
+import { Topic, Question, Source } from '@/lib/redux/slices/topicSlice';
 
 export default function IdPage() {
   const params = useParams();
@@ -35,7 +35,9 @@ export default function IdPage() {
   // Check if topic exists or not
   if (
     !data.pending &&
-    ((data.type === 'topic' && data.name === '') || (data.type === 'question' && data.title === ''))
+    ((data.type === 'topic' && data.name === '') ||
+      (data.type === 'question' && data.title === '') ||
+      (data.type === 'source' && data.title === ''))
   ) {
     return (
       <div className="flex flex-col justify-center items-center h-full">
@@ -51,18 +53,12 @@ export default function IdPage() {
 
     if (question === null || question.trim() === '') return;
 
-    const result = await fetch('/api/topic/add', {
+    const result = await fetch(`/api/${isQuestion ? 'question' : 'source'}/add`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        id: routeToken,
-        type: isQuestion ? 'question' : 'source',
-        data: {
-          title: question,
-          description: isQuestion ? '' : undefined,
-          summary: isQuestion ? undefined : '',
-          url: isQuestion ? undefined : '',
-        },
+        title: question.trim(),
+        parentId: data.id,
       }),
     });
 
@@ -114,6 +110,14 @@ export default function IdPage() {
       mode === 'questions'
         ? 'Generate Subquestions agent will be wired to the backend soon.'
         : 'Generate Sources agent will be wired to the backend soon.'
+    );
+  };
+
+  const runSummarizeAgent = async (mode: 'question' | 'source') => {
+    alert(
+      mode === 'question'
+        ? 'Question summarize agent will be wired to the backend soon.'
+        : 'Source summarize agent will be wired to the backend soon.'
     );
   };
 
@@ -274,6 +278,23 @@ export default function IdPage() {
                 Generate Sources Agent
               </button>
             </div>
+
+            <div className="mt-6 rounded-xl border border-[#dbe6f2] bg-[#f9fcff] p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs tracking-[0.16em] uppercase text-[#6a7c93]">Summary</p>
+                  <p className="mt-2 text-sm text-[#5c7189] leading-relaxed">
+                    {question.summary || 'No AI summary yet. Click summarize to generate one.'}
+                  </p>
+                </div>
+                <button
+                  className="rounded-lg border border-[#b8cdf1] bg-white px-3 py-2 text-sm font-medium text-[#24508f] hover:bg-[#f2f7ff]"
+                  onClick={() => runSummarizeAgent('question')}
+                >
+                  Summarize Agent
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center justify-end gap-4">
@@ -343,7 +364,7 @@ export default function IdPage() {
                 <div className="flex flex-col gap-3">
                   {question.sources.map((s) => (
                     <div
-                      key={s.questionId}
+                      key={s.parentId}
                       className="p-4 rounded-xl border border-[#dbe6f2] bg-[#f9fcff] hover:bg-white hover:shadow-sm transition"
                     >
                       <div className="flex justify-between items-start gap-3">
@@ -376,6 +397,81 @@ export default function IdPage() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  } else if (data.type === 'source') {
+    const source = data as Source;
+
+    return (
+      <div
+        className="min-h-full p-6 md:p-8"
+        style={{ background: 'linear-gradient(180deg, #fbfcff 0%, #f2f6fb 100%)' }}
+      >
+        <div className="mx-auto max-w-5xl flex flex-col gap-6">
+          <div className="rounded-2xl border border-[#d8e2ef] bg-white/90 backdrop-blur p-6 md:p-8 shadow-sm">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div className="max-w-3xl">
+                <p className="text-xs tracking-[0.2em] uppercase text-[#6a7c93]">Source</p>
+                <h1 className="mt-2 text-3xl md:text-4xl font-bold text-[#102a43]">
+                  {source.title || 'Untitled source'}
+                </h1>
+
+                <div className="mt-4 rounded-xl border border-[#dbe6f2] bg-[#f9fcff] p-4">
+                  <p className="text-xs tracking-[0.16em] uppercase text-[#6a7c93]">
+                    Reference URL
+                  </p>
+                  {source.url ? (
+                    <a
+                      href={source.url}
+                      className="mt-2 inline-block text-sm text-[#1f6feb] break-all hover:underline"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {source.url}
+                    </a>
+                  ) : (
+                    <p className="mt-2 text-sm text-[#8293a8]">No URL has been provided yet.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  className="rounded-full border border-[#8adfb2] bg-[#e8fff1] px-4 py-2 text-sm font-medium text-[#13693a] hover:bg-[#ddf8ea]"
+                  onClick={() => runGenerateAgent('sources')}
+                >
+                  Generate Sources Agent
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-xl border border-[#dbe6f2] bg-[#f9fcff] p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs tracking-[0.16em] uppercase text-[#6a7c93]">Summary</p>
+                  <p className="mt-2 text-sm text-[#5c7189] leading-relaxed">
+                    {source.summary || 'No AI summary yet. Click summarize to generate one.'}
+                  </p>
+                </div>
+                <button
+                  className="rounded-lg border border-[#b8cdf1] bg-white px-3 py-2 text-sm font-medium text-[#24508f] hover:bg-[#f2f7ff]"
+                  onClick={() => runSummarizeAgent('source')}
+                >
+                  Summarize Agent
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#d8e2ef] bg-white p-5 shadow-sm">
+            <h3 className="text-xl font-semibold mb-2 text-[#102a43]">How This Helps</h3>
+            <p className="text-sm text-[#5c7189] leading-relaxed">
+              Keep this page as the evidence card for the question. Add generated or manual
+              summaries, validate the source URL, and use this record to support downstream agent
+              reasoning.
+            </p>
           </div>
         </div>
       </div>

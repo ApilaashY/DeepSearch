@@ -5,7 +5,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params;
 
-    const source = await prisma.source.findUnique({ where: { questionId: id } });
+    const source = await prisma.source.findUnique({ where: { id: id } });
 
     if (!source) {
       return NextResponse.json({ error: 'Source not found.' }, { status: 404 });

@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Get sources and sub-questions of question concurrently
     const [questions, sources] = await Promise.all([
       prisma.question.findMany({ where: { topicId: question.id } }),
-      prisma.source.findMany({ where: { questionId: question.id } }),
+      prisma.source.findMany({ where: { parentId: question.id } }),
     ]);
 
     return NextResponse.json(
