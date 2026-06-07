@@ -47,7 +47,7 @@ export default function IdPage() {
   }
 
   const addQuestion = async (isQuestion: boolean) => {
-    if (data.type === 'source') return;
+    if (data.type === 'source' || data.type === 'question') return;
 
     const question = prompt(`What is the ${isQuestion ? 'Question' : 'Source'} you want to add?`);
 
@@ -124,67 +124,142 @@ export default function IdPage() {
   if (data.type === 'topic') {
     const topic = data as Topic;
     return (
-      // Topic View
-      <div className="flex flex-col p-6 gap-4 color-white">
-        <div className="flex flex-row justify-between">
-          <h1 className="text-2xl font-semibold">{topic.name}</h1>
-        </div>
-
-        {/* Question List */}
-        {topic.questions.length === 0 ? (
-          <p className="text-sm text-[#d0d0d0]">No questions yet.</p>
-        ) : (
-          topic.questions.map((q) => (
-            <div
-              key={q.id}
-              className="flex flex-col gap-2 p-4 bg-[#f0f0f0] rounded cursor-pointer"
-              onClick={() => router.push(`/app/question_${q.id}`)}
-            >
-              <h2 className="text-lg font-semibold">{q.title}</h2>
-              <p className="text-sm text-[#333333]">{q.description || 'No description'}</p>
-            </div>
-          ))
-        )}
-
-        {/* Add Question/Source Button */}
-        <div className="flex flex-col items-center">
-          {!addingQ ? (
-            <div
-              className="w-1/2 max-w-xl p-5 cursor-pointer"
-              style={{
-                background:
-                  'repeating-linear-gradient(45deg, #ffffff, #ffffff 10px, #f0f0f0 10px, #f0f0f0 20px)',
-              }}
-              onClick={() => {
-                setAddingQ(!addingQ);
-              }}
-            >
-              + New Question/Source
-            </div>
-          ) : (
-            <div className="flex flex-row gap-2 w-1/2 max-w-xl">
-              <div
-                className="flex-1 p-5 cursor-pointer"
-                style={{
-                  background:
-                    'repeating-linear-gradient(45deg, #ffffff, #ffffff 10px, #f0f0f0 10px, #f0f0f0 20px)',
-                }}
-                onClick={() => addQuestion(true)}
-              >
-                Question
+      <div
+        className="min-h-full p-6 md:p-8"
+        style={{ background: 'linear-gradient(180deg, #fbfcff 0%, #f2f6fb 100%)' }}
+      >
+        <div className="mx-auto max-w-6xl flex flex-col gap-6">
+          <div className="rounded-2xl border border-[#d8e2ef] bg-white/90 backdrop-blur p-6 md:p-8 shadow-sm">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div className="max-w-3xl">
+                <p className="text-xs tracking-[0.2em] uppercase text-[#6a7c93]">Topic</p>
+                <h1 className="mt-2 text-3xl md:text-4xl font-bold text-[#102a43]">{topic.name}</h1>
+                <p className="mt-3 text-sm md:text-base text-[#4e6277] leading-relaxed">
+                  {topic.description || 'This topic collects questions and direct sources.'}
+                </p>
               </div>
-              <div
-                className="flex-1 p-5 cursor-pointer"
-                style={{
-                  background:
-                    'repeating-linear-gradient(45deg, #ffffff, #ffffff 10px, #f0f0f0 10px, #f0f0f0 20px)',
-                }}
-                onClick={() => addQuestion(false)}
-              >
-                Source
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  className="rounded-lg border border-[#80bfff] bg-[#e8f3ff] px-4 py-2 text-sm font-medium text-[#0b4ea2] hover:bg-[#dcedff]"
+                  onClick={() => runGenerateAgent('questions')}
+                >
+                  Generate Questions Agent
+                </button>
+                <button
+                  className="rounded-lg border border-[#8adfb2] bg-[#e8fff1] px-4 py-2 text-sm font-medium text-[#13693a] hover:bg-[#ddf8ea]"
+                  onClick={() => runGenerateAgent('sources')}
+                >
+                  Generate Sources Agent
+                </button>
               </div>
             </div>
-          )}
+
+            <div className="mt-6 rounded-xl border border-[#dbe6f2] bg-[#f9fcff] p-4">
+              <p className="text-xs tracking-[0.16em] uppercase text-[#6a7c93]">Summary</p>
+              <p className="mt-2 text-sm text-[#5c7189] leading-relaxed">
+                {topic.summary || 'No AI summary yet. Click summarize to generate one later.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-4">
+            {!addingQ ? (
+              <button
+                className="px-4 py-2 rounded-lg cursor-pointer text-sm font-medium text-[#102a43] border border-[#d8e2ef] bg-white hover:bg-[#f8fbff]"
+                onClick={() => setAddingQ(true)}
+              >
+                + New Item
+              </button>
+            ) : (
+              <div className="flex flex-row gap-2">
+                <button
+                  className="px-4 py-2 rounded-lg cursor-pointer text-sm font-medium text-white bg-[#1f6feb] hover:bg-[#1b62d3]"
+                  onClick={() => addQuestion(true)}
+                >
+                  Question
+                </button>
+                <button
+                  className="px-4 py-2 rounded-lg cursor-pointer text-sm font-medium text-white bg-[#0f8b63] hover:bg-[#0d7a57]"
+                  onClick={() => addQuestion(false)}
+                >
+                  Source
+                </button>
+                <button
+                  className="px-3 py-2 rounded-lg cursor-pointer text-sm text-[#9f1239] bg-[#ffe4e6] hover:bg-[#fecdd3]"
+                  onClick={() => setAddingQ(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="rounded-2xl border border-[#d8e2ef] bg-white p-5 shadow-sm">
+              <h3 className="text-xl font-semibold mb-3 text-[#102a43]">Questions</h3>
+              {topic.questions.length === 0 ? (
+                <p className="text-sm text-[#8293a8]">No questions yet.</p>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {topic.questions.map((q) => (
+                    <div
+                      key={q.id}
+                      className="p-4 rounded-xl border border-[#dbe6f2] bg-[#f9fcff] cursor-pointer hover:bg-white hover:shadow-sm transition"
+                      onClick={() => router.push(`/app/question_${q.id}`)}
+                    >
+                      <h4 className="font-semibold text-lg text-[#12314f]">{q.title}</h4>
+                      <p className="text-sm text-[#5c7189] mt-1 line-clamp-2">
+                        {q.description || 'No description yet'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-2xl border border-[#d8e2ef] bg-white p-5 shadow-sm">
+              <h3 className="text-xl font-semibold mb-3 text-[#102a43]">Sources</h3>
+              {topic.sources.length === 0 ? (
+                <p className="text-sm text-[#8293a8]">No sources yet.</p>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {topic.sources.map((s) => (
+                    <div
+                      key={s.id}
+                      className="p-4 rounded-xl border border-[#dbe6f2] bg-[#f9fcff] hover:bg-white hover:shadow-sm transition"
+                    >
+                      <div className="flex justify-between items-start gap-3">
+                        <div>
+                          <h4 className="font-semibold text-lg text-[#12314f]">
+                            {s.title || 'Untitled source'}
+                          </h4>
+                          {s.url ? (
+                            <a
+                              href={s.url}
+                              className="text-sm text-[#1f6feb] break-all hover:underline"
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              {s.url}
+                            </a>
+                          ) : (
+                            <p className="text-xs text-[#7f91a6] mt-1">No URL yet</p>
+                          )}
+                        </div>
+                        <span className="rounded-full bg-[#e7f0fb] px-2 py-1 text-xs text-[#335f89]">
+                          Source
+                        </span>
+                      </div>
+                      <p className="text-sm text-[#5c7189] mt-2 line-clamp-3">
+                        {s.summary || 'No summary yet'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -271,12 +346,6 @@ export default function IdPage() {
               >
                 Generate Subquestions Agent
               </button>
-              <button
-                className="rounded-full border border-[#8adfb2] bg-[#e8fff1] px-4 py-2 text-sm font-medium text-[#13693a] hover:bg-[#ddf8ea]"
-                onClick={() => runGenerateAgent('sources')}
-              >
-                Generate Sources Agent
-              </button>
             </div>
 
             <div className="mt-6 rounded-xl border border-[#dbe6f2] bg-[#f9fcff] p-4">
@@ -314,12 +383,6 @@ export default function IdPage() {
                   Subquestion
                 </button>
                 <button
-                  className="px-4 py-2 rounded-lg cursor-pointer text-sm font-medium text-white bg-[#0f8b63] hover:bg-[#0d7a57]"
-                  onClick={() => addQuestion(false)}
-                >
-                  Source
-                </button>
-                <button
                   className="px-3 py-2 rounded-lg cursor-pointer text-sm text-[#9f1239] bg-[#ffe4e6] hover:bg-[#fecdd3]"
                   onClick={() => setAddingQ(false)}
                 >
@@ -327,76 +390,6 @@ export default function IdPage() {
                 </button>
               </div>
             )}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Subquestions Column */}
-            <div className="rounded-2xl border border-[#d8e2ef] bg-white p-5 shadow-sm">
-              <h3 className="text-xl font-semibold mb-3 text-[#102a43]">Subquestions</h3>
-
-              {!question.questions || question.questions.length === 0 ? (
-                <p className="text-sm text-[#8293a8]">No subquestions yet.</p>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  {question.questions.map((sq) => (
-                    <div
-                      key={sq.id}
-                      className="p-4 rounded-xl border border-[#dbe6f2] bg-[#f9fcff] cursor-pointer hover:bg-white hover:shadow-sm transition"
-                      onClick={() => router.push(`/app/question_${sq.id}`)}
-                    >
-                      <h4 className="font-semibold text-lg text-[#12314f]">{sq.title}</h4>
-                      <p className="text-sm text-[#5c7189] mt-1 line-clamp-2">
-                        {sq.description || 'No description yet'}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Sources Column */}
-            <div className="rounded-2xl border border-[#d8e2ef] bg-white p-5 shadow-sm">
-              <h3 className="text-xl font-semibold mb-3 text-[#102a43]">Sources</h3>
-
-              {!question.sources || question.sources.length === 0 ? (
-                <p className="text-sm text-[#8293a8]">No sources yet.</p>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  {question.sources.map((s) => (
-                    <div
-                      key={s.parentId}
-                      className="p-4 rounded-xl border border-[#dbe6f2] bg-[#f9fcff] hover:bg-white hover:shadow-sm transition"
-                    >
-                      <div className="flex justify-between items-start gap-3">
-                        <div>
-                          <h4 className="font-semibold text-lg text-[#12314f]">
-                            {s.title || 'Untitled source'}
-                          </h4>
-                          {s.url ? (
-                            <a
-                              href={s.url}
-                              className="text-sm text-[#1f6feb] break-all hover:underline"
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              {s.url}
-                            </a>
-                          ) : (
-                            <p className="text-xs text-[#7f91a6] mt-1">No URL yet</p>
-                          )}
-                        </div>
-                        <span className="rounded-full bg-[#e7f0fb] px-2 py-1 text-xs text-[#335f89]">
-                          Source
-                        </span>
-                      </div>
-                      <p className="text-sm text-[#5c7189] mt-2 line-clamp-3">
-                        {s.summary || 'No summary yet'}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>
@@ -435,15 +428,6 @@ export default function IdPage() {
                     <p className="mt-2 text-sm text-[#8293a8]">No URL has been provided yet.</p>
                   )}
                 </div>
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  className="rounded-full border border-[#8adfb2] bg-[#e8fff1] px-4 py-2 text-sm font-medium text-[#13693a] hover:bg-[#ddf8ea]"
-                  onClick={() => runGenerateAgent('sources')}
-                >
-                  Generate Sources Agent
-                </button>
               </div>
             </div>
 

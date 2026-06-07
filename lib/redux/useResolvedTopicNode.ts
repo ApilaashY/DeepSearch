@@ -62,43 +62,11 @@ function createDefaultNode(routeToken: string): TopicNode {
 }
 
 function findQuestionInTree(topic: Topic, questionId: string): Question | undefined {
-  const directQuestion = topic.questions.find((question) => question.id === questionId);
-
-  if (directQuestion !== undefined) {
-    return directQuestion;
-  }
-
-  for (const question of topic.questions) {
-    const nestedQuestion = question.questions?.find(
-      (childQuestion) => childQuestion.id === questionId
-    );
-
-    if (nestedQuestion !== undefined) {
-      return nestedQuestion;
-    }
-  }
-
-  return undefined;
+  return topic.questions.find((question) => question.id === questionId);
 }
 
 function findSourceInTree(topic: Topic, sourceId: string): Source | undefined {
-  for (const question of topic.questions) {
-    const directSource = question.sources?.find((source) => source.parentId === sourceId);
-
-    if (directSource !== undefined) {
-      return directSource;
-    }
-
-    for (const childQuestion of question.questions ?? []) {
-      const nestedSource = childQuestion.sources?.find((source) => source.parentId === sourceId);
-
-      if (nestedSource !== undefined) {
-        return nestedSource;
-      }
-    }
-  }
-
-  return undefined;
+  return topic.sources.find((source) => source.id === sourceId);
 }
 
 function resolveTopicNode(topics: Topic[], routeToken: string): TopicNode | undefined {

@@ -6,6 +6,7 @@ export interface Topic {
   name: string;
   description: string;
   questions: Question[];
+  sources: Source[];
   summary: string;
   pending: boolean;
 }
@@ -15,6 +16,7 @@ export const defaultTopic: Topic = {
   name: '',
   description: '',
   questions: [],
+  sources: [],
   summary: '',
   pending: false,
   type: 'topic',
@@ -25,8 +27,6 @@ export interface Question {
   id: string;
   title: string;
   description: string;
-  questions: Question[];
-  sources: Source[];
   summary: string;
   pending: boolean;
 }
@@ -35,8 +35,6 @@ export const defaultQuestion: Question = {
   id: '',
   title: '',
   description: '',
-  questions: [],
-  sources: [],
   summary: '',
   pending: false,
   type: 'question',
@@ -48,7 +46,7 @@ export interface Source {
   title: string;
   url: string;
   summary: string;
-  parentId: string;
+  topicId: string;
   pending: boolean;
 }
 
@@ -57,7 +55,7 @@ export const defaultSource: Source = {
   title: '',
   url: '',
   summary: '',
-  parentId: '',
+  topicId: '',
   pending: false,
   type: 'source',
 };
