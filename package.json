@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "next:dev": "next dev",
+    "worker:dev": "npx graphile-worker -c \"postgresql://postgres:postgres@localhost:54322/postgres\"",
+    "dev": "concurrently -n \"Next,Worker\" -c \"cyan,magenta\" \"npm run next:dev\" \"npm run worker:dev\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -13,7 +15,8 @@
     "test": "echo \"No tests specified yet\" && exit 0",
     "db:pull": "prisma db pull",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "worker": "graphile-worker"
   },
   "dependencies": {
     "@langchain/community": "^1.1.28",
@@ -29,6 +32,7 @@
     "md-to-pdf": "^5.2.5",
     "next": "16.2.6",
     "pg": "^8.21.0",
+    "postgraphile": "^4.14.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-redux": "^9.3.0",
@@ -40,13 +44,14 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^10.0.3",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "lint-staged": "^13.2.0",
+    "prettier": "^2.8.8",
     "prisma": "^7.8.0",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "prettier": "^2.8.8",
-    "lint-staged": "^13.2.0"
+    "typescript": "^5"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,css,md,mdx,html,scss}": [
