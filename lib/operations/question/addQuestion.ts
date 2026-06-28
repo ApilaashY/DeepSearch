@@ -11,13 +11,16 @@ export async function addQuestion(
     if (!topic) {
       throw new ParentNotFound();
     }
+
+    const question = await prisma.question.create({ data: { title: title, topicId: parentId } });
+    return question.id;
   } else {
-    const question = await prisma.question.findUnique({ where: { id: parentId } });
-    if (!question) {
+    const parentQuestion = await prisma.question.findUnique({ where: { id: parentId } });
+    if (!parentQuestion) {
       throw new ParentNotFound();
     }
-  }
 
-  const question = await prisma.question.create({ data: { title: title, parentId: parentId } });
-  return question.id;
+    const question = await prisma.question.create({ data: { title: title, parentId: parentId } });
+    return question.id;
+  }
 }

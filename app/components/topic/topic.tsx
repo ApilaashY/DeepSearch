@@ -12,21 +12,26 @@ export default function TopicPage({ id }: { id: string }) {
   const router = useRouter();
 
   useEffect(() => {
-    fetch(`/api/topic/get/${id}`)
-      .then((res) => res.json())
-      .then((data: { topic: Topic }) => setTopic(data.topic))
-      .catch((err) => {
-        if (err.status === 404) {
-          setError('Topic not found');
-        } else {
-          setError('Failed to get topic');
-        }
+    const fetchTopic = () => {
+      fetch(`/api/topic/get/${id}`)
+        .then((res) => res.json())
+        .then((data: { topic: Topic }) => setTopic(data.topic))
+        .catch((err) => {
+          if (err.status === 404) {
+            setError('Topic not found');
+          } else {
+            setError('Failed to get topic');
+          }
 
-        logger.error(err);
-      });
+          logger.error(err);
+        });
+    };
+
+    fetchTopic();
+    const interval = setInterval(fetchTopic, 5000);
+
+    return () => clearInterval(interval);
   }, [id]);
-
-  logger.log(topic);
 
   const addQuestion = async () => {
     if (topic === null) return;
@@ -95,9 +100,7 @@ export default function TopicPage({ id }: { id: string }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: topic.id,
-          userEmail: 'researcher@example.com',
-          actionType: 'Perform Research Analysis',
+          id: topic.id,
         }),
       });
 

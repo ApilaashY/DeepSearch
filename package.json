@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "next:dev": "next dev",
-    "worker:dev": "npx graphile-worker -c \"postgresql://postgres:postgres@localhost:54322/postgres\"",
+    "worker:dev": "NODE_OPTIONS=\"--import tsx\" npx graphile-worker -c \"postgresql://postgres:postgres@localhost:54322/postgres\"",
     "dev": "concurrently -n \"Next,Worker\" -c \"cyan,magenta\" \"npm run next:dev\" \"npm run worker:dev\"",
     "build": "next build",
     "start": "next start",

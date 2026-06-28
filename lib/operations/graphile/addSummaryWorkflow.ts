@@ -1,11 +1,12 @@
 import { prisma } from '@/lib/prisma';
 
-export async function addSummaryWorkflow(params: Record<string, unknown>): Promise<boolean> {
+export async function addSummaryWorkflow(id: string): Promise<boolean> {
   try {
     await prisma.$executeRaw`
             SELECT graphile_worker.add_job(
-              identifier => ${'process-user-action'}, 
-              payload => ${JSON.stringify(params)}
+              identifier => ${'summary-research'},
+              payload => ${JSON.stringify({ topicId: id })},
+              max_attempts => 1
             );
           `;
     await prisma.$disconnect();

@@ -3,9 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, userEmail, actionType } = await req.json();
+    const { id } = await req.json();
 
-    addSummaryWorkflow({ userId, userEmail, actionType });
+    await addSummaryWorkflow(id);
 
     return NextResponse.json({ success: true, message: 'Queued Job' }, { status: 200 });
   } catch (error) {
