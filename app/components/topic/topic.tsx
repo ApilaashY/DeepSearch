@@ -24,7 +24,7 @@ export default function TopicPage({ id }: { id: string }) {
 
         logger.error(err);
       });
-  }, []);
+  }, [id]);
 
   logger.log(topic);
 

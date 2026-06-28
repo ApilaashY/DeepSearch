@@ -1,7 +1,7 @@
 import { Logger } from '@/lib/logger';
 import { Question } from '@/lib/redux/slices/topicSlice';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const logger = new Logger('Question Page');
 
@@ -31,7 +31,7 @@ export default function QuestionPage({ id }: { id: string }) {
 
         logger.error(err);
       });
-  }, []);
+  }, [id]);
 
   const saveQuestionDetails = async (questionId: string) => {
     if (draftTitle.trim() === '') {
@@ -88,7 +88,7 @@ export default function QuestionPage({ id }: { id: string }) {
 
     setAddingQ(false);
 
-    const { id, type } = await result.json();
+    const { id } = await result.json();
 
     router.push(`/app/q_${id}`);
   };
@@ -131,7 +131,12 @@ export default function QuestionPage({ id }: { id: string }) {
             <div className="max-w-3xl">
               {!editingQuestion ? (
                 <>
-                  <p className="text-xs tracking-[0.2em] uppercase text-[#6a7c93]">Question</p>
+                  <p className="text-xs tracking-[0.2em] uppercase text-[#6a7c93]">
+                    <span className="cursor-pointer" onClick={() => router.back()}>
+                      {'<-'}
+                    </span>
+                    Question
+                  </p>
                   <h1 className="mt-2 text-3xl md:text-4xl font-bold text-[#102a43]">
                     {question.title}
                   </h1>

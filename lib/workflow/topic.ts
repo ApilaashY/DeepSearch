@@ -1,4 +1,4 @@
-import { ChatOllama, OllamaEmbeddings } from '@langchain/ollama';
+import { OllamaEmbeddings } from '@langchain/ollama';
 import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { MemoryVectorStore } from '@langchain/classic/vectorstores/memory';
@@ -9,6 +9,9 @@ import { mdToPdf } from 'md-to-pdf';
 import fs from 'fs';
 import { lightModel, strongModel, textEmbeddingModel } from './model';
 import { getTopic } from '../operations/topic/getTopic';
+import { Logger } from '../logger';
+
+const logger = new Logger('Topic Workflow');
 
 interface Data {
   information: string;
@@ -60,7 +63,7 @@ const GraphState = Annotation.Root({
 });
 
 const questionRefine = async (state: typeof GraphState.State) => {
-  console.log('Refining Question...');
+  logger.log('Refining Question...');
   const response = await strongModel.invoke([
     {
       role: 'system',
@@ -81,7 +84,7 @@ Your goal is to output a 2-3 sentence "Expanded Research Scope" that covers what
   ]);
 
   const refined = response.trim();
-  console.log('Refined Question: ', refined);
+  logger.log('Refined Question: ', refined);
 
   return {
     problem: refined,
@@ -90,7 +93,7 @@ Your goal is to output a 2-3 sentence "Expanded Research Scope" that covers what
 };
 
 const makeQuestions = async (state: typeof GraphState.State) => {
-  console.log('Generating Atomic Search Questions...');
+  logger.log('Generating Atomic Search Questions...');
   const response = await lightModel.invoke([
     {
       role: 'system',
@@ -115,10 +118,10 @@ Guidelines:
     .filter((q) => q.length > 10); // Look for reasonable length sentences
 
   if (questions.length === 0) {
-    console.warn('Warning: No questions extracted from raw output:', rawContent);
+    logger.warn('Warning: No questions extracted from raw output:', rawContent);
   }
 
-  console.log('Generated Questions');
+  logger.log('Generated Questions');
 
   return {
     questions: questions.map((question) => {
@@ -138,15 +141,15 @@ Guidelines:
 This node will turn each question into a search query, and then from the sources of the results choose what articles are useful and extract the information
 */
 const researcher = async (state: typeof GraphState.State) => {
-  console.log('Researching...');
+  logger.log('Researching...');
   const questions = state.questions;
   let callCount = 0;
 
-  console.log('Researching Internet...');
+  logger.log('Researching Internet...');
 
   const collectedData: Data[][] = await Promise.all(
     questions.map(async (question, i) => {
-      console.log(`Researching ${i + 1} of ${questions.length} questions...`);
+      logger.log(`Researching ${i + 1} of ${questions.length} questions...`);
 
       // Skip questions that already have data
       if (question.data.information) return [];
@@ -165,7 +168,7 @@ const researcher = async (state: typeof GraphState.State) => {
         .toString()
         .trim()
         .replace(/^["']|["']$/g, '');
-      console.log(`Query for "${question.question.slice(0, 30)}...": ${properQuestionContent}`);
+      logger.log(`Query for "${question.question.slice(0, 30)}...": ${properQuestionContent}`);
 
       const results = await generalSearch(properQuestionContent);
       if (results.length === 0) return [];
@@ -193,11 +196,11 @@ const researcher = async (state: typeof GraphState.State) => {
         const match = usefulSources.content.toString().match(/\[[\d,\s]+\]/);
         usefulSourcesContent = match ? JSON.parse(match[0]) : [];
       } catch (e) {
-        console.warn('Could not parse source indices, defaulting to first 2.');
+        logger.warn('Could not parse source indices, defaulting to first 2.', e);
         usefulSourcesContent = [0, 1].filter((i) => i < results.length);
       }
 
-      console.log('Useful Source Indices:', usefulSourcesContent);
+      logger.log('Useful Source Indices:', usefulSourcesContent);
 
       // 3. Extract content from selected sources
       const data = await Promise.all(
@@ -218,7 +221,7 @@ const researcher = async (state: typeof GraphState.State) => {
     })
   );
 
-  console.log('Finished Researching Internet... Collecting');
+  logger.log('Finished Researching Internet... Collecting');
 
   return {
     collectedData: collectedData.flat(),
@@ -230,7 +233,7 @@ const researcher = async (state: typeof GraphState.State) => {
 This conditional edge will access the information and figure out if the data we have is enough to answer the question, if yes it will move to the synthesiser node, otherwise it will go back to the question generator to generate more questions.
 */
 const checkSufficiency = async (state: typeof GraphState.State) => {
-  console.log('Checking Sufficiency...');
+  logger.log('Checking Sufficiency...');
 
   // If we already have 5 sets of collected data, we have enough
   if (state.collectedData.length >= 5) {
@@ -251,7 +254,7 @@ Output only "Yes" if it is sufficient, and "No" if it is not.`,
   ]);
 
   const responseContent = response.trim();
-  console.log('Response Content:', responseContent);
+  logger.log('Response Content:', responseContent);
 
   // Logic to determine if we have enough data to answer the problem
   if (responseContent.toLowerCase().includes('yes')) {
@@ -259,7 +262,7 @@ Output only "Yes" if it is sufficient, and "No" if it is not.`,
   }
 
   // If not enough, go back to makeQuestions
-  console.log('Not enough info... generating more questions');
+  logger.log('Not enough info... generating more questions');
   return 'makeQuestions';
 };
 
@@ -268,7 +271,7 @@ This node will take the collected information and synthesize it into a coherent 
 It uses RAG (Retrieval-Augmented Generation) to handle large amounts of data.
 */
 const synthesiser = async (state: typeof GraphState.State) => {
-  console.log('Synthesizing final report with RAG...');
+  logger.log('Synthesizing final report with RAG...');
 
   const embeddings = new OllamaEmbeddings({ model: textEmbeddingModel });
 
@@ -291,13 +294,11 @@ const synthesiser = async (state: typeof GraphState.State) => {
     }
   }
 
-  console.log(
-    `Indexing ${docsToIndex.length} chunks from ${state.collectedData.length} sources...`
-  );
+  logger.log(`Indexing ${docsToIndex.length} chunks from ${state.collectedData.length} sources...`);
   const vectorStore = await MemoryVectorStore.fromDocuments(docsToIndex, embeddings);
 
   // 2. Retrieve the most relevant chunks for the original problem
-  console.log('Retrieving relevant snippets...');
+  logger.log('Retrieving relevant snippets...');
   const relevantDocs = await vectorStore.similaritySearch(state.problem, 10);
 
   const context = relevantDocs
@@ -333,16 +334,16 @@ Tone: Professional but engaging. Avoid being overly dry or academic. Focus on pr
 
   // 4. Convert Markdown to PDF
   try {
-    console.log('Generating PDF (research.pdf)...');
+    logger.log('Generating PDF (research.pdf)...');
     const pdf = await mdToPdf({ content: reportMarkdown });
     fs.writeFileSync('research.pdf', pdf.content);
-    console.log('PDF successfully saved as research.pdf');
+    logger.log('PDF successfully saved as research.pdf');
   } catch (pdfError) {
-    console.error('Failed to generate PDF:', pdfError);
+    logger.error('Failed to generate PDF:', pdfError);
   }
 
-  console.log('\n--- FINAL REPORT ---\n');
-  console.log(reportMarkdown);
+  logger.log('\n--- FINAL REPORT ---\n');
+  logger.log(reportMarkdown);
 
   return {
     finalReport: reportMarkdown,
@@ -373,8 +374,8 @@ export const runAgent = async (topicId: string) => {
       "How do stuffed toys affect teenagers' development and mental health between the ages of 13 and 18?",
   });
 
-  console.log('\n==================================================');
-  console.log('AGENT COMPLETE');
-  console.log('Total AI Calls:', result.aiCalls);
-  console.log('==================================================\n');
+  logger.log('\n==================================================');
+  logger.log('AGENT COMPLETE');
+  logger.log('Total AI Calls:', result.aiCalls);
+  logger.log('==================================================\n');
 };

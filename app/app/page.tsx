@@ -1,12 +1,7 @@
 'use client';
-
-import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
-import { addTopics } from '@/lib/redux/slices/topicSlice';
 import { useRouter } from 'next/navigation';
 
 export default function Page() {
-  const topics = useAppSelector((state) => state.topics.topics);
-  const dispatch = useAppDispatch();
   const router = useRouter();
 
   const createNewTopic = async () => {
@@ -31,9 +26,6 @@ export default function Page() {
       });
 
       const data = await result.json();
-
-      // Add the topic to the Redux store
-      dispatch(addTopics([data]));
 
       // Navigate away using the ID from the database
       router.push(`/app/t_${data.id}`);

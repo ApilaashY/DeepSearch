@@ -23,7 +23,7 @@ export default function SourcePage({ id }: { id: string }) {
 
         logger.error(err);
       });
-  }, []);
+  }, [id]);
 
   // Error Check
   if (error !== null) {

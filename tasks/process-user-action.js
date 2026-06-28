@@ -3,7 +3,7 @@ export default async function processUserAction(payload, helpers) {
   const { id, email, action } = payload;
 
   helpers.logger.info(
-    `Starting background work for User #${id || 'unknown'} - Action: ${
+    `Starting background work for User #${id || 'unknown'} Email ${email || 'unknown'} - Action: ${
       action || 'Perform Research'
     }`
   );

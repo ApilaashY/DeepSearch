@@ -5,17 +5,17 @@ export class Logger {
     this.prefix = prefix;
   }
 
-  private assembleMessage(message: any) {
+  private assembleMessage(message: unknown) {
     return `[${this.prefix}] - ${message}`;
   }
 
-  log(message: any) {
-    console.log(this.assembleMessage(message));
+  log(message: unknown, data?: unknown) {
+    console.log(this.assembleMessage(message), data);
   }
-  error(error: any, data?: any) {
+  error(error: unknown, data?: unknown) {
     console.error(this.assembleMessage(error), data);
   }
-  warn(message: any) {
-    console.warn(this.assembleMessage(message));
+  warn(message: unknown, data?: unknown) {
+    console.warn(this.assembleMessage(message), data);
   }
 }

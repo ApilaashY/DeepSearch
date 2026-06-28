@@ -1,31 +1,13 @@
-import { prisma } from '@/lib/prisma';
+import { getTopic } from '@/lib/operations/topic/getTopic';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
 
-    const topic = await prisma.topic.findUnique({ where: { id } });
+    const topic = await getTopic(id);
 
-    if (!topic) {
-      return NextResponse.json({ error: 'Topic not found.' }, { status: 404 });
-    }
-
-    const [questions, sources] = await Promise.all([
-      prisma.question.findMany({ where: { topicId: id } }),
-      prisma.source.findMany({ where: { topicId: id } }),
-    ]);
-
-    return NextResponse.json(
-      {
-        topic: {
-          ...topic,
-          questions: questions.map((q) => ({ ...q, type: 'question' })),
-          sources: sources.map((s) => ({ ...s, type: 'source' })),
-        },
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({ topic }, { status: 200 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Failed to get topics.' }, { status: 500 });

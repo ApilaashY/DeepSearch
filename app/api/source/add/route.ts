@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { addSource } from '@/lib/operations/source/addSource';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
@@ -11,16 +11,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Parent id is required.' }, { status: 400 });
     }
 
-    const topic = await prisma.topic.findUnique({ where: { id: parentId } });
+    const source = await addSource(title, parentId);
 
-    if (!topic) {
-      return NextResponse.json({ error: 'Topic not found.' }, { status: 404 });
-    }
-
-    // Create the new source
-    const source = await prisma.source.create({ data: { title, topicId: parentId } });
-
-    return NextResponse.json({ id: source.id, type: 'source' }, { status: 200 });
+    return NextResponse.json({ source }, { status: 200 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Failed to create source.' }, { status: 500 });
