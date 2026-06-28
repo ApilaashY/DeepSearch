@@ -105,12 +105,34 @@ export default function IdPage() {
     }
   };
 
-  const runGenerateAgent = async (mode: 'questions' | 'sources') => {
-    alert(
-      mode === 'questions'
-        ? 'Generate Subquestions agent will be wired to the backend soon.'
-        : 'Generate Sources agent will be wired to the backend soon.'
-    );
+  const runGenerateAgent = async () => {
+    try {
+      const response = await fetch('/api/graphile/queue', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: data.id,
+          userEmail: 'researcher@example.com',
+          actionType: 'Perform Research Analysis',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const resData = await response.json();
+      if (resData.success) {
+        alert('Research job successfully offloaded to Graphile Worker!');
+      } else {
+        alert('Failed to trigger research job: ' + (resData.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error triggering research:', error);
+      alert('Failed to trigger research job.');
+    }
   };
 
   const runSummarizeAgent = async (mode: 'question' | 'source') => {
@@ -141,16 +163,10 @@ export default function IdPage() {
 
               <div className="flex flex-wrap gap-2">
                 <button
-                  className="rounded-lg border border-[#80bfff] bg-[#e8f3ff] px-4 py-2 text-sm font-medium text-[#0b4ea2] hover:bg-[#dcedff]"
-                  onClick={() => runGenerateAgent('questions')}
+                  className="rounded-lg border border-[#80bfff] bg-[#e8f3ff] px-4 py-2 text-sm font-medium text-[#0b4ea2] hover:bg-[#dcedff] cursor-pointer"
+                  onClick={() => runGenerateAgent()}
                 >
-                  Generate Questions Agent
-                </button>
-                <button
-                  className="rounded-lg border border-[#8adfb2] bg-[#e8fff1] px-4 py-2 text-sm font-medium text-[#13693a] hover:bg-[#ddf8ea]"
-                  onClick={() => runGenerateAgent('sources')}
-                >
-                  Generate Sources Agent
+                  Perform Research Analysis
                 </button>
               </div>
             </div>
@@ -342,7 +358,7 @@ export default function IdPage() {
             <div className="mt-5 flex flex-wrap gap-2">
               <button
                 className="rounded-full border border-[#80bfff] bg-[#e8f3ff] px-4 py-2 text-sm font-medium text-[#0b4ea2] hover:bg-[#dcedff]"
-                onClick={() => runGenerateAgent('questions')}
+                onClick={() => runGenerateAgent()}
               >
                 Generate Subquestions Agent
               </button>
