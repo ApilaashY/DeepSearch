@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       }
 
       const [questions, sources] = await Promise.all([
-        prisma.question.findMany({ where: { topicId: topic.id } }),
+        prisma.question.findMany({ where: { parentId: topic.id } }),
         prisma.source.findMany({ where: { topicId: topic.id } }),
       ]);
 

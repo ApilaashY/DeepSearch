@@ -11,10 +11,24 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Question not found.' }, { status: 404 });
     }
 
+    // Get the sub questions
+    const subQuestions = await prisma.question.findMany({
+      select: {
+        id: true,
+        title: true,
+        description: true,
+      },
+      where: {
+        parentId: id,
+      },
+    });
+
     return NextResponse.json(
       {
-        ...question,
-        type: 'question',
+        question: {
+          ...question,
+          questions: subQuestions,
+        },
       },
       { status: 200 }
     );

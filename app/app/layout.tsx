@@ -1,5 +1,5 @@
-import Sidebar from "@/components/Sidebar";
-import ReduxProvider from "@/components/ReduxProvider";
+import Sidebar from '@/app/components/Sidebar';
+import ReduxProvider from '@/app/components/ReduxProvider';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (

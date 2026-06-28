@@ -13,11 +13,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(
       {
-        ...source,
-        type: 'source',
-        url: source.url ?? '',
-        summary: source.summary ?? '',
-        pending: false,
+        source: {
+          ...source,
+          url: source.url ?? '',
+          summary: source.summary ?? '',
+        },
       },
       { status: 200 }
     );

@@ -36,7 +36,7 @@ export default function Page() {
       dispatch(addTopics([data]));
 
       // Navigate away using the ID from the database
-      router.push(`/app/topic_${data.id}`);
+      router.push(`/app/t_${data.id}`);
     } catch (error) {
       console.error('Failed to create topic via thunk:', error);
       alert('Failed to create topic. Please try again.');

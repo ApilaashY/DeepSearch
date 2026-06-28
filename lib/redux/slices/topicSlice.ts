@@ -29,6 +29,8 @@ export interface Question {
   description: string;
   summary: string;
   pending: boolean;
+  sources: string[];
+  questions: Question[];
 }
 
 export const defaultQuestion: Question = {
@@ -38,6 +40,8 @@ export const defaultQuestion: Question = {
   summary: '',
   pending: false,
   type: 'question',
+  sources: [],
+  questions: [],
 };
 
 export interface Source {

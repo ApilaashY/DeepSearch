@@ -51,7 +51,7 @@ export default function Sidebar() {
           ) : (
             topics.map((topic) => (
               <Link
-                href={`/app/topic_${topic.id}`}
+                href={`/app/t_${topic.id}`}
                 key={topic.id}
                 className="text-sm cursor-pointer hover:text-[#d0d0d0] truncate"
               >

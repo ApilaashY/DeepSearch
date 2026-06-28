@@ -18,10 +18,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(
       {
-        ...topic,
-        questions: questions.map((q) => ({ ...q, type: 'question' })),
-        sources: sources.map((s) => ({ ...s, type: 'source' })),
-        type: 'topic',
+        topic: {
+          ...topic,
+          questions: questions.map((q) => ({ ...q, type: 'question' })),
+          sources: sources.map((s) => ({ ...s, type: 'source' })),
+        },
       },
       { status: 200 }
     );
