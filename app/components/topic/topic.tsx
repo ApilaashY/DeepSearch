@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { type Topic } from '@/lib/redux/slices/topicSlice';
 import { useRouter } from 'next/navigation';
 import { Logger } from '@/lib/logger';
+import ReactMarkdown from 'react-markdown';
 
 const logger = new Logger('Topic Page');
 
@@ -93,6 +94,11 @@ export default function TopicPage({ id }: { id: string }) {
   const runGenerateAgent = async () => {
     if (topic === null) return;
 
+    if (!topic.description.trim()) {
+      alert('Please add a description to understand what exactly to research about.');
+      return;
+    }
+
     try {
       const response = await fetch('/api/graphile/queue', {
         method: 'POST',
@@ -118,6 +124,37 @@ export default function TopicPage({ id }: { id: string }) {
       console.error('Error triggering research:', error);
       alert('Failed to trigger research job.');
     }
+  };
+
+  const updateDescription = async () => {
+    if (topic === null) return;
+
+    let description: string | null = '';
+    while (description !== null && description.trim() === '') {
+      description = prompt('Enter a description to research about: ');
+    }
+
+    if (description === null) {
+      // Abort
+      return;
+    }
+
+    const result = await fetch(`/api/topic/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: topic.id,
+        description: description,
+      }),
+    });
+
+    if (!result.ok) {
+      alert('Failed to update description.');
+      return;
+    }
+
+    const { topic: updatedTopic } = await result.json();
+    setTopic(updatedTopic);
   };
 
   // Page rendering
@@ -167,11 +204,79 @@ export default function TopicPage({ id }: { id: string }) {
             </div>
           </div>
 
-          <div className="mt-6 rounded-xl border border-[#dbe6f2] bg-[#f9fcff] p-4">
-            <p className="text-xs tracking-[0.16em] uppercase text-[#6a7c93]">Summary</p>
+          <div
+            className="mt-6 rounded-xl border border-[#dbe6f2] p-4 cursor-pointer"
+            onClick={updateDescription}
+          >
+            <p className="text-xs tracking-[0.16em] uppercase text-[#6a7c93]">Description</p>
             <p className="mt-2 text-sm text-[#5c7189] leading-relaxed">
-              {topic.summary || 'No AI summary yet. Click summarize to generate one later.'}
+              {topic.description ||
+                'A description is needed to frame the research and do it with AI'}
             </p>
+          </div>
+
+          <div className="mt-6 rounded-xl border border-[#dbe6f2] bg-[#eef7ff] p-4">
+            <p className="text-xs tracking-[0.16em] uppercase text-[#6a7c93]">Summary</p>
+            {topic.summary ? (
+              <div className="mt-2">
+                <ReactMarkdown
+                  components={{
+                    h1: ({ children }) => (
+                      <h1 className="text-2xl font-bold text-[#102a43] mt-4 mb-2">{children}</h1>
+                    ),
+                    h2: ({ children }) => (
+                      <h2 className="text-xl font-semibold text-[#102a43] mt-3 mb-2">{children}</h2>
+                    ),
+                    h3: ({ children }) => (
+                      <h3 className="text-lg font-semibold text-[#102a43] mt-3 mb-1">{children}</h3>
+                    ),
+                    h4: ({ children }) => (
+                      <h4 className="text-base font-semibold text-[#102a43] mt-2 mb-1">
+                        {children}
+                      </h4>
+                    ),
+                    p: ({ children }) => (
+                      <p className="text-sm text-[#5c7189] leading-relaxed mb-2">{children}</p>
+                    ),
+                    ul: ({ children }) => (
+                      <ul className="list-disc list-inside text-sm text-[#5c7189] mb-2 space-y-1">
+                        {children}
+                      </ul>
+                    ),
+                    ol: ({ children }) => (
+                      <ol className="list-decimal list-inside text-sm text-[#5c7189] mb-2 space-y-1">
+                        {children}
+                      </ol>
+                    ),
+                    li: ({ children }) => <li className="text-sm text-[#5c7189]">{children}</li>,
+                    strong: ({ children }) => (
+                      <strong className="font-semibold text-[#102a43]">{children}</strong>
+                    ),
+                    a: ({ href, children }) => (
+                      <a
+                        href={href}
+                        className="text-[#1f6feb] hover:underline"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {children}
+                      </a>
+                    ),
+                    code: ({ children }) => (
+                      <code className="bg-[#dbe6f2] text-[#102a43] rounded px-1 py-0.5 text-xs font-mono">
+                        {children}
+                      </code>
+                    ),
+                  }}
+                >
+                  {topic.summary}
+                </ReactMarkdown>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-[#5c7189] leading-relaxed">
+                No AI summary yet. Click summarize to generate one later.
+              </p>
+            )}
           </div>
         </div>
 

@@ -1,4 +1,4 @@
-import { ChatOllama, Ollama } from '@langchain/ollama';
+import { ChatOllama, OllamaEmbeddings } from '@langchain/ollama';
 
 // For chat models
 // const chatModel = new ChatOllama({
@@ -14,8 +14,8 @@ export const lightModel = new ChatOllama({
   model: 'gemma4:e4b',
 });
 
-export const strongModel = new Ollama({
-  model: 'deepseek-r1:32b',
+export const strongModel = new ChatOllama({
+  model: 'qwen3:30b', //'deepseek-r1:32b',
 });
 
-export const textEmbeddingModel = 'nomic-embed-text';
+export const textEmbeddingModel = new OllamaEmbeddings({ model: 'nomic-embed-text' });

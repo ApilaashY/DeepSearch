@@ -5,13 +5,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const { parentId, title } = body;
+    const { parentId, title, url } = body;
 
     if (!parentId || typeof parentId !== 'string') {
       return NextResponse.json({ error: 'Parent id is required.' }, { status: 400 });
     }
 
-    const source = await addSource(title, parentId);
+    const source = await addSource(title, url, parentId);
 
     return NextResponse.json({ source }, { status: 200 });
   } catch (error) {

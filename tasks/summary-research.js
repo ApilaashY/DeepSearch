@@ -1,16 +1,33 @@
-import { addQuestion } from '../lib/operations/question/addQuestion';
+import { summaryResearchAgent } from '../lib/workflow/topic';
+import { getTopic } from '../lib/operations/topic/getTopic';
+import { Logger } from '../lib/logger';
 
-export default async function summaryResearch(payload, helpers) {
+const logger = new Logger('Summary Research Task');
+
+export default async function summaryResearch(payload) {
   const { topicId } = payload;
 
-  helpers.logger.info(`Starting background work for Topic #${topicId}`);
+  logger.log('Fetching topic...');
+  // Get existing questions
+  const { questions, description } = await getTopic(topicId, {
+    description: true,
+    questions: true,
+  });
 
-  for (let i = 0; i < 5; i++) {
-    // Calling addQuestion with proper arguments: title, parentId, isTopic
-    await addQuestion(`Automated Research Question ${i + 1}`, topicId, true);
-    helpers.logger.info(`Successfully finished action "Add Question ${i + 1}"`);
-    await new Promise((resolve) => setTimeout(resolve, 7000));
-  }
+  logger.log(`STARTING ANALYSIS FOR QUESTION: ${description}`);
 
-  helpers.logger.info(`Successfully finished all background work for Topic #${topicId}`);
+  // Call summary agent
+  summaryResearchAgent.invoke({
+    problem: description,
+    questions: questions.map((q) => {
+      return {
+        question: q.title,
+        data: {
+          information: '',
+          references: [],
+        },
+      };
+    }),
+    topicId: topicId,
+  });
 }
