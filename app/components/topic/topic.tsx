@@ -6,6 +6,19 @@ import ReactMarkdown from 'react-markdown';
 
 const logger = new Logger('Topic Page');
 
+const notInclude = new Set(['a', 'the', 'is', 'are', 'an', 'of', 'in', 'for', 'to']);
+function titlize(text: string): string {
+  const words = text.split(' ');
+  return words
+    .map((word) => {
+      if (notInclude.has(word.toLowerCase())) {
+        return word;
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(' ');
+}
+
 export default function TopicPage({ id }: { id: string }) {
   const [topic, setTopic] = useState<Topic | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -325,7 +338,7 @@ export default function TopicPage({ id }: { id: string }) {
                     className="p-4 rounded-xl border border-[#dbe6f2] bg-[#f9fcff] cursor-pointer hover:bg-white hover:shadow-sm transition"
                     onClick={() => router.push(`/app/q_${q.id}`)}
                   >
-                    <h4 className="font-semibold text-lg text-[#12314f]">{q.title}</h4>
+                    <h4 className="font-semibold text-lg text-[#12314f]">{titlize(q.title)}</h4>
                     <p className="text-sm text-[#5c7189] mt-1 line-clamp-2">
                       {q.description || 'No description yet'}
                     </p>
@@ -344,7 +357,8 @@ export default function TopicPage({ id }: { id: string }) {
                 {topic.sources.map((s) => (
                   <div
                     key={s.id}
-                    className="p-4 rounded-xl border border-[#dbe6f2] bg-[#f9fcff] hover:bg-white hover:shadow-sm transition"
+                    className="p-4 rounded-xl border border-[#dbe6f2] bg-[#f9fcff] hover:bg-white hover:shadow-sm transition cursor-pointer"
+                    onClick={() => router.push(`/app/s_${s.id}`)}
                   >
                     <div className="flex justify-between items-start gap-3">
                       <div>

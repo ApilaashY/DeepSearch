@@ -10,8 +10,6 @@ export default function Sidebar() {
   const searchTopics = useAppSelector((state) => state.topics.topics);
   const [topics, setTopics] = useState(searchTopics);
 
-  console.log(params.id);
-
   // fetch all topics from db and add to redux store on initial load
   useEffect(() => {
     fetch('/api/topic/get', {
