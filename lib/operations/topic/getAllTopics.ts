@@ -12,5 +12,5 @@ export async function getAllTopics(userId: string): Promise<string[]> {
     },
   });
 
-  return topics.map((t) => t.id);
+  return topics.map((t: { id: string }) => t.id);
 }
