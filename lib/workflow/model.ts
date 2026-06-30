@@ -1,4 +1,5 @@
 import { ChatOllama, OllamaEmbeddings } from '@langchain/ollama';
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 
 // For chat models
 // const chatModel = new ChatOllama({
@@ -10,12 +11,18 @@ import { ChatOllama, OllamaEmbeddings } from '@langchain/ollama';
 
 // For regular LLMs
 
-export const lightModel = new ChatOllama({
-  model: 'gemma4:e4b',
-});
+export const lightModel =
+  process.env.AI_MODEL === 'ollama'
+    ? new ChatOllama({
+        model: 'gemma4:e4b',
+      })
+    : new ChatGoogleGenerativeAI({ model: 'gemini-3.5-flash' });
 
-export const strongModel = new ChatOllama({
-  model: 'qwen3:30b', //'deepseek-r1:32b',
-});
+export const strongModel =
+  process.env.AI_MODEL === 'ollama'
+    ? new ChatOllama({
+        model: 'qwen3:30b', //'deepseek-r1:32b',
+      })
+    : new ChatGoogleGenerativeAI({ model: 'gemini-3.1-flash-lite' });
 
 export const textEmbeddingModel = new OllamaEmbeddings({ model: 'nomic-embed-text' });
