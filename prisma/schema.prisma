@@ -6,32 +6,36 @@ datasource db {
   provider = "postgresql"
 }
 
-model Topic {
-  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String
-  description String?
-  createdAt   DateTime   @default(now())
-  summary     String?
-  questions   Question[]
-  sources     Source[]
-}
-
 model Question {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  title       String
-  description String?
-  topicId     String   @db.Uuid
-  createdAt   DateTime @default(now())
-  summary     String?
-  topic       Topic    @relation(fields: [topicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id             String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title          String
+  description    String?
+  topicId        String?    @db.Uuid
+  createdAt      DateTime   @default(now())
+  summary        String?
+  sources        Json?      @default("[]")
+  parentId       String?    @db.Uuid
+  Question       Question?  @relation("QuestionToQuestion", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_Question Question[] @relation("QuestionToQuestion")
+  Topic          Topic?     @relation(fields: [topicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Source {
   id      String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   title   String
   summary String?
   url     String?
   topicId String  @db.Uuid
-  topic   Topic   @relation(fields: [topicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Topic   Topic   @relation(fields: [topicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Topic {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  description String?
+  createdAt   DateTime   @default(now())
+  summary     String?
+  ai_pending  Boolean    @default(false)
+  Question    Question[]
+  Source      Source[]
 }

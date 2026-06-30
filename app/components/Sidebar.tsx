@@ -1,13 +1,13 @@
 'use client';
 
-import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
-import { addTopics } from '@/lib/redux/slices/topicSlice';
+import { useAppSelector } from '@/lib/redux/hooks';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function Sidebar() {
+  const params = useParams();
   const searchTopics = useAppSelector((state) => state.topics.topics);
-  const dispatch = useAppDispatch();
   const [topics, setTopics] = useState(searchTopics);
 
   // fetch all topics from db and add to redux store on initial load
@@ -18,20 +18,15 @@ export default function Sidebar() {
     })
       .then((res) => res.json())
       .then((data) => {
-        dispatch(addTopics(data));
+        setTopics(data);
       });
-    console.log(searchTopics);
-  }, []);
-
-  useEffect(() => {
-    setTopics(searchTopics);
-  }, [searchTopics]);
+  }, [params.id]);
 
   return (
     <div className="bg-[#012542] h-full p-6 w-[250px] text-white flex flex-col gap-12">
       {/* Title */}
       <Link href="/app" className="flex flex-col gap-1">
-        <h1 className="text-3xl font-bold">DeepAgent</h1>
+        <h1 className="text-3xl font-bold">SuDeep</h1>
         <h3 className="text-sm font-semibold text-[#d0d0d0]">Research Console</h3>
       </Link>
 
@@ -51,7 +46,7 @@ export default function Sidebar() {
           ) : (
             topics.map((topic) => (
               <Link
-                href={`/app/topic_${topic.id}`}
+                href={`/app/t_${topic.id}`}
                 key={topic.id}
                 className="text-sm cursor-pointer hover:text-[#d0d0d0] truncate"
               >

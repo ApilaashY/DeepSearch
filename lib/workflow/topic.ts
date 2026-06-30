@@ -1,21 +1,22 @@
-import { ChatOllama, OllamaEmbeddings } from '@langchain/ollama';
 import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
-import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { MemoryVectorStore } from '@langchain/classic/vectorstores/memory';
+import { RecursiveCharacterTextSplitter } from '@langchain/classic/text_splitter';
 import { Document } from '@langchain/core/documents';
-// import { z } from "zod";
-import { generalSearch, getLinkContent } from './search';
-import { mdToPdf } from 'md-to-pdf';
-import fs from 'fs';
 import { lightModel, strongModel, textEmbeddingModel } from './model';
-import { getTopic } from '../operations/topic/getTopic';
+import { Logger } from '../logger';
+import { generalSearch, getLinkContent } from './search';
+import { addQuestion } from '../operations/question/addQuestion';
+import { updateTopic } from '../operations/topic/updateTopic';
+import { addSource } from '../operations/source/addSource';
+
+const logger = new Logger('Topic Workflow');
 
 interface Data {
   information: string;
   references: string[];
 }
 
-interface Question {
+interface QueryQuestion {
   question: string;
   data: Data;
 }
@@ -27,9 +28,8 @@ const GraphState = Annotation.Root({
   }),
   problem: Annotation<string>({
     reducer: (_, y) => y,
-    default: () => '',
   }),
-  questions: Annotation<Question[]>({
+  questions: Annotation<QueryQuestion[]>({
     reducer: (x, y) => {
       // Adds all of the elements of y to x, except if y.question is already in x.
       for (const question of y) {
@@ -60,7 +60,7 @@ const GraphState = Annotation.Root({
 });
 
 const questionRefine = async (state: typeof GraphState.State) => {
-  console.log('Refining Question...');
+  logger.log('Refining Question...');
   const response = await strongModel.invoke([
     {
       role: 'system',
@@ -80,18 +80,17 @@ Your goal is to output a 2-3 sentence "Expanded Research Scope" that covers what
     },
   ]);
 
-  const refined = response.trim();
-  console.log('Refined Question: ', refined);
+  logger.log('Refined Question: ', response.content);
 
   return {
-    problem: refined,
+    problem: response.content.toString(),
     aiCalls: 1,
   };
 };
 
 const makeQuestions = async (state: typeof GraphState.State) => {
   console.log('Generating Atomic Search Questions...');
-  const response = await lightModel.invoke([
+  const response = await strongModel.invoke([
     {
       role: 'system',
       content: `You are a Senior Research Analyst. 
@@ -102,7 +101,12 @@ Guidelines:
 2. The questions should cover different facets of the main objective (e.g., technical details, current state, historical context, key players).
 3. Output ONLY the questions, one per line.
 4. Do not use numbers or bullet points like '1.' or '-'. 
-5. Do not include any introductory or concluding text.`,
+5. Do not include any introductory or concluding text.
+6. Do not include questions that have already been answered.
+
+Existing Questions that Have Been Answered:
+${state.questions.map((q) => `- ${q.question}`).join('\n')}
+    `,
     },
     { role: 'user', content: state.problem },
   ]);
@@ -115,10 +119,18 @@ Guidelines:
     .filter((q) => q.length > 10); // Look for reasonable length sentences
 
   if (questions.length === 0) {
-    console.warn('Warning: No questions extracted from raw output:', rawContent);
+    console.warn('Warning: No questions extracted from raw output:', response);
   }
 
-  console.log('Generated Questions');
+  logger.log('Generated Questions');
+  logger.log(questions);
+
+  // Add Questions to DB
+  await Promise.all(
+    questions.map(async (question) => {
+      await addQuestion(question, state.topicId);
+    })
+  );
 
   return {
     questions: questions.map((question) => {
@@ -144,84 +156,93 @@ const researcher = async (state: typeof GraphState.State) => {
 
   console.log('Researching Internet...');
 
-  const collectedData: Data[][] = await Promise.all(
-    questions.map(async (question, i) => {
-      console.log(`Researching ${i + 1} of ${questions.length} questions...`);
+  const collectedData = new Set<Data>();
+  let i = 0;
+  for (const question of questions) {
+    console.log(`Researching ${i + 1} of ${questions.length} questions...`);
 
-      // Skip questions that already have data
-      if (question.data.information) return [];
+    // Skip questions that already have data
+    if (question.data.information) continue;
 
-      const properQuestion = await lightModel.invoke([
-        {
-          role: 'system',
-          content:
-            'You are a Senior Research Analyst. Turn the given question into a single, highly effective Google search query. Output ONLY the query string.',
-        },
-        { role: 'user', content: question.question },
-      ]);
-      callCount++;
+    const properQuestion = await lightModel.invoke([
+      {
+        role: 'system',
+        content:
+          'You are a Senior Research Analyst. Turn the given question into a single, highly effective Google search query. Output ONLY the query string.',
+      },
+      { role: 'user', content: question.question },
+    ]);
+    callCount++;
 
-      const properQuestionContent = properQuestion.content
-        .toString()
-        .trim()
-        .replace(/^["']|["']$/g, '');
-      console.log(`Query for "${question.question.slice(0, 30)}...": ${properQuestionContent}`);
+    const properQuestionContent = properQuestion.content
+      .toString()
+      .trim()
+      .replace(/^["']|["']$/g, '');
+    console.log(`Query for "${question.question.slice(0, 30)}...": ${properQuestionContent}`);
 
-      const results = await generalSearch(properQuestionContent);
-      if (results.length === 0) return [];
+    const results = await generalSearch(properQuestionContent);
+    if (results.length === 0) return [];
 
-      // 2. Identify useful sources
-      const usefulSources = await lightModel.invoke([
-        {
-          role: 'system',
-          content: `Analyze these search results for the question: "${question.question}". 
+    // 2. Identify useful sources
+    const usefulSources = await strongModel.invoke([
+      {
+        role: 'system',
+        content: `Analyze these search results for the question: "${question.question}". 
   Return a JSON array of indices (e.g., [0, 2]) for the most relevant sources. 
   Output ONLY the array.`,
-        },
-        {
-          role: 'user',
-          content: JSON.stringify(
-            results.map((result, i) => `[${i}] ${result.title}: ${result.content}`)
-          ),
-        },
-      ]);
-      callCount++;
+      },
+      {
+        role: 'user',
+        content: JSON.stringify(
+          results.map((result, i) => `[${i}] ${result.title}: ${result.content}`)
+        ),
+      },
+    ]);
+    callCount++;
 
-      // Robust JSON parsing for indices
-      let usefulSourcesContent: number[] = [];
-      try {
-        const match = usefulSources.content.toString().match(/\[[\d,\s]+\]/);
-        usefulSourcesContent = match ? JSON.parse(match[0]) : [];
-      } catch (e) {
-        console.warn('Could not parse source indices, defaulting to first 2.');
-        usefulSourcesContent = [0, 1].filter((i) => i < results.length);
-      }
+    // Robust JSON parsing for indices
+    let usefulSourcesContent: number[] = [];
+    try {
+      const match = usefulSources.content.toString().match(/\[[\d,\s]+\]/);
+      usefulSourcesContent = match ? JSON.parse(match[0]) : [];
+    } catch (e) {
+      logger.warn('Could not parse source indices, defaulting to first 2.', e);
+      usefulSourcesContent = [0, 1].filter((i) => i < results.length);
+    }
 
-      console.log('Useful Source Indices:', usefulSourcesContent);
+    console.log('Useful Source Indices:', usefulSourcesContent);
 
-      // 3. Extract content from selected sources
-      const data = await Promise.all(
-        usefulSourcesContent.map(async (index) => {
-          if (!results[index]) return null;
-          const content = await getLinkContent(results[index].url);
-          if (content) {
-            return {
-              information: content,
-              references: [results[index].url],
-            };
+    // 3. Extract content from selected sources
+    for (const index of usefulSourcesContent) {
+      if (!results[index]) return null;
+      const content = await getLinkContent(results[index].url);
+      if (content) {
+        let exists = false;
+        for (const d of collectedData) {
+          if (d.references.includes(results[index].url)) {
+            exists = true;
+            break;
           }
-          return null;
-        })
-      );
+        }
+        if (exists) continue;
 
-      return data.filter((d) => d !== null);
-    })
-  );
+        collectedData.add({
+          information: content,
+          references: [results[index].url],
+        });
+
+        // Add source to DB topic
+        await addSource(results[index].title, results[index].url, state.topicId);
+      }
+    }
+
+    i++;
+  }
 
   console.log('Finished Researching Internet... Collecting');
 
   return {
-    collectedData: collectedData.flat(),
+    collectedData: Array.from(collectedData),
     aiCalls: callCount,
   };
 };
@@ -250,8 +271,7 @@ Output only "Yes" if it is sufficient, and "No" if it is not.`,
     },
   ]);
 
-  const responseContent = response.trim();
-  console.log('Response Content:', responseContent);
+  const responseContent = response.content.toString().trim();
 
   // Logic to determine if we have enough data to answer the problem
   if (responseContent.toLowerCase().includes('yes')) {
@@ -259,7 +279,7 @@ Output only "Yes" if it is sufficient, and "No" if it is not.`,
   }
 
   // If not enough, go back to makeQuestions
-  console.log('Not enough info... generating more questions');
+  logger.log('Not enough info... generating more questions');
   return 'makeQuestions';
 };
 
@@ -268,9 +288,9 @@ This node will take the collected information and synthesize it into a coherent 
 It uses RAG (Retrieval-Augmented Generation) to handle large amounts of data.
 */
 const synthesiser = async (state: typeof GraphState.State) => {
-  console.log('Synthesizing final report with RAG...');
+  logger.log('Synthesizing final report with RAG...');
 
-  const embeddings = new OllamaEmbeddings({ model: textEmbeddingModel });
+  const embeddings = textEmbeddingModel;
 
   // 1. Chunk the collected data
   const textSplitter = new RecursiveCharacterTextSplitter({
@@ -329,20 +349,12 @@ Tone: Professional but engaging. Avoid being overly dry or academic. Focus on pr
     },
   ]);
 
-  const reportMarkdown = response;
+  const reportMarkdown = response.content.toString().toString();
 
-  // 4. Convert Markdown to PDF
-  try {
-    console.log('Generating PDF (research.pdf)...');
-    const pdf = await mdToPdf({ content: reportMarkdown });
-    fs.writeFileSync('research.pdf', pdf.content);
-    console.log('PDF successfully saved as research.pdf');
-  } catch (pdfError) {
-    console.error('Failed to generate PDF:', pdfError);
-  }
+  logger.log(`FINAL REPORT: ${reportMarkdown}`);
 
-  console.log('\n--- FINAL REPORT ---\n');
-  console.log(reportMarkdown);
+  // Add Final Report to DB
+  await updateTopic(state.topicId, { summary: reportMarkdown });
 
   return {
     finalReport: reportMarkdown,
@@ -351,7 +363,7 @@ Tone: Professional but engaging. Avoid being overly dry or academic. Focus on pr
 };
 
 // --- Build the Graph ---
-const agent2 = new StateGraph(GraphState)
+export const summaryResearchAgent = new StateGraph(GraphState)
   .addNode('questionRefine', questionRefine)
   .addNode('makeQuestions', makeQuestions)
   .addNode('researcher', researcher)
@@ -362,19 +374,3 @@ const agent2 = new StateGraph(GraphState)
   .addConditionalEdges('researcher', checkSufficiency, ['synthesiser', 'makeQuestions'])
   .addEdge('synthesiser', END)
   .compile();
-
-export const runAgent = async (topicId: string) => {
-  // Ensure topic exists, throw if it doesn't
-  await getTopic(topicId);
-
-  const result = await agent2.invoke({
-    topicId: topicId,
-    problem:
-      "How do stuffed toys affect teenagers' development and mental health between the ages of 13 and 18?",
-  });
-
-  console.log('\n==================================================');
-  console.log('AGENT COMPLETE');
-  console.log('Total AI Calls:', result.aiCalls);
-  console.log('==================================================\n');
-};
