@@ -83,8 +83,8 @@ export default function QuestionPage({ id }: { id: string }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title: questionTitle.trim(),
-        parentId: question.id,
-        isTopic: false,
+        topicId: question.topicId,
+        parentQuestionId: question.id,
       }),
     });
 

@@ -128,7 +128,7 @@ ${state.questions.map((q) => `- ${q.question}`).join('\n')}
   // Add Questions to DB
   await Promise.all(
     questions.map(async (question) => {
-      await addQuestion(question, state.topicId, true);
+      await addQuestion(question, state.topicId);
     })
   );
 

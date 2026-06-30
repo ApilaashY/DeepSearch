@@ -35,6 +35,7 @@ model Topic {
   description String?
   createdAt   DateTime   @default(now())
   summary     String?
+  ai_pending  Boolean    @default(false)
   Question    Question[]
   Source      Source[]
 }

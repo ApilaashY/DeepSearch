@@ -45,3 +45,16 @@ export async function getTopic(
     return { ...topic, questions, sources };
   }
 }
+
+export async function getTopicAIPending(topicId: string) {
+  const topic = await prisma.topic.findUnique({
+    where: { id: topicId },
+    select: { ai_pending: true },
+  });
+
+  if (!topic) {
+    throw new ItemNotFound();
+  }
+
+  return topic.ai_pending;
+}

@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { ItemNotFound } from '../topic/getTopic';
+import { getTopicAIPending, ItemNotFound } from '../topic/getTopic';
 
 export async function getSource(sourceId: string) {
   const source = await prisma.source.findUnique({ where: { id: sourceId } });
@@ -8,5 +8,5 @@ export async function getSource(sourceId: string) {
     throw new ItemNotFound();
   }
 
-  return source;
+  return { ...source, ai_pending: await getTopicAIPending(source.topicId) };
 }

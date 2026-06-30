@@ -59,7 +59,7 @@ export default function TopicPage({ id }: { id: string }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title: question.trim(),
-        parentId: topic.id,
+        topicId: topic.id,
         isTopicParent: true,
       }),
     });
@@ -79,15 +79,15 @@ export default function TopicPage({ id }: { id: string }) {
   const addSource = async () => {
     if (topic === null) return;
 
-    const question = prompt(`What is the source you want to add?`);
+    const source = prompt(`What is the source you want to add?`);
 
-    if (question === null || question.trim() === '') return;
+    if (source === null || source.trim() === '') return;
 
-    const result = await fetch(`/api/question/add`, {
+    const result = await fetch(`/api/source/add`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        title: question.trim(),
+        title: source.trim(),
         parentId: topic.id,
       }),
     });
@@ -106,6 +106,10 @@ export default function TopicPage({ id }: { id: string }) {
 
   const runGenerateAgent = async () => {
     if (topic === null) return;
+    if (topic.ai_pending) {
+      alert('Research is already in progress.');
+      return;
+    }
 
     if (!topic.description.trim()) {
       alert('Please add a description to understand what exactly to research about.');
@@ -210,9 +214,17 @@ export default function TopicPage({ id }: { id: string }) {
             <div className="flex flex-wrap gap-2">
               <button
                 className="rounded-lg border border-[#80bfff] bg-[#e8f3ff] px-4 py-2 text-sm font-medium text-[#0b4ea2] hover:bg-[#dcedff] cursor-pointer"
-                onClick={() => runGenerateAgent()}
+                onClick={() => {
+                  setTopic({ ...topic, ai_pending: true });
+                  runGenerateAgent();
+                }}
+                disabled={topic.ai_pending}
               >
-                Perform Research Analysis
+                {topic.ai_pending ? (
+                  <span className="animate-pulse">Research Analysis in Progress...</span>
+                ) : (
+                  'Perform Research Analysis'
+                )}
               </button>
             </div>
           </div>

@@ -8,7 +8,7 @@ export interface Topic {
   questions: Question[];
   sources: Source[];
   summary: string;
-  pending: boolean;
+  ai_pending: boolean;
 }
 
 export const defaultTopic: Topic = {
@@ -18,7 +18,7 @@ export const defaultTopic: Topic = {
   questions: [],
   sources: [],
   summary: '',
-  pending: false,
+  ai_pending: false,
   type: 'topic',
 };
 
@@ -28,9 +28,10 @@ export interface Question {
   title: string;
   description: string;
   summary: string;
-  pending: boolean;
+  ai_pending: boolean;
   sources: string[];
   questions: Question[];
+  topicId: string;
 }
 
 export const defaultQuestion: Question = {
@@ -38,10 +39,11 @@ export const defaultQuestion: Question = {
   title: '',
   description: '',
   summary: '',
-  pending: false,
+  ai_pending: false,
   type: 'question',
   sources: [],
   questions: [],
+  topicId: '',
 };
 
 export interface Source {
@@ -51,7 +53,7 @@ export interface Source {
   url: string;
   summary: string;
   topicId: string;
-  pending: boolean;
+  ai_pending: boolean;
 }
 
 export const defaultSource: Source = {
@@ -60,7 +62,7 @@ export const defaultSource: Source = {
   url: '',
   summary: '',
   topicId: '',
-  pending: false,
+  ai_pending: false,
   type: 'source',
 };
 

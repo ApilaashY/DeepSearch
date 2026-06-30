@@ -3,24 +3,23 @@ import { prisma } from '@/lib/prisma';
 
 export async function addQuestion(
   title: string,
-  parentId: string,
-  isTopic: boolean
+  topicId: string,
+  parentQuestionId?: string
 ): Promise<string> {
-  if (isTopic) {
-    const topic = await prisma.topic.findUnique({ where: { id: parentId } });
-    if (!topic) {
-      throw new ParentNotFound();
-    }
+  const topic = await prisma.topic.findUnique({ where: { id: topicId } });
+  if (!topic) {
+    throw new ParentNotFound();
+  }
 
-    const question = await prisma.question.create({ data: { title: title, topicId: parentId } });
-    return question.id;
-  } else {
-    const parentQuestion = await prisma.question.findUnique({ where: { id: parentId } });
+  if (parentQuestionId) {
+    const parentQuestion = await prisma.question.findUnique({ where: { id: parentQuestionId } });
     if (!parentQuestion) {
       throw new ParentNotFound();
     }
-
-    const question = await prisma.question.create({ data: { title: title, parentId: parentId } });
-    return question.id;
   }
+
+  const question = await prisma.question.create({
+    data: { title: title, topicId: topicId, parentId: parentQuestionId ?? null },
+  });
+  return question.id;
 }

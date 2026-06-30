@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { ItemNotFound } from '../topic/getTopic';
+import { getTopicAIPending, ItemNotFound } from '../topic/getTopic';
 
 export async function getQuestion(questionId: string) {
   const question = await prisma.question.findUnique({ where: { id: questionId } });
@@ -10,5 +10,9 @@ export async function getQuestion(questionId: string) {
 
   const subQuestions = await prisma.question.findMany({ where: { parentId: questionId } });
 
-  return { ...question, questions: subQuestions };
+  return {
+    ...question,
+    questions: subQuestions,
+    ai_pending: await getTopicAIPending(question.topicId || ''),
+  };
 }
