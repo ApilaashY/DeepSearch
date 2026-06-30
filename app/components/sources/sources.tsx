@@ -11,18 +11,25 @@ export default function SourcePage({ id }: { id: string }) {
   const router = useRouter();
 
   useEffect(() => {
-    fetch(`/api/source/get/${id}`)
-      .then((res) => res.json())
-      .then((data: { source: Source }) => setSource(data.source))
-      .catch((err) => {
-        if (err.status === 404) {
-          setError('Source not found');
-        } else {
-          setError('Failed to get source');
-        }
+    const fetchSource = () => {
+      fetch(`/api/source/get/${id}`)
+        .then((res) => res.json())
+        .then((data: { source: Source }) => setSource(data.source))
+        .catch((err) => {
+          if (err.status === 404) {
+            setError('Source not found');
+          } else {
+            setError('Failed to get source');
+          }
 
-        logger.error(err);
-      });
+          logger.error(err);
+        });
+    };
+
+    fetchSource();
+    const interval = setInterval(fetchSource, 5000);
+
+    return () => clearInterval(interval);
   }, [id]);
 
   // Error Check

@@ -19,18 +19,25 @@ export default function QuestionPage({ id }: { id: string }) {
   const [savingQuestion, setSavingQuestion] = useState<boolean>(false);
 
   useEffect(() => {
-    fetch(`/api/question/get/${id}`)
-      .then((res) => res.json())
-      .then((data: { question: Question }) => setQuestion(data.question))
-      .catch((err) => {
-        if (err.status === 404) {
-          setError('Question not found');
-        } else {
-          setError('Failed to get question');
-        }
+    const fetchQuestion = () => {
+      fetch(`/api/question/get/${id}`)
+        .then((res) => res.json())
+        .then((data: { question: Question }) => setQuestion(data.question))
+        .catch((err) => {
+          if (err.status === 404) {
+            setError('Question not found');
+          } else {
+            setError('Failed to get question');
+          }
 
-        logger.error(err);
-      });
+          logger.error(err);
+        });
+    };
+
+    fetchQuestion();
+    const interval = setInterval(fetchQuestion, 5000);
+
+    return () => clearInterval(interval);
   }, [id]);
 
   const saveQuestionDetails = async (questionId: string) => {
