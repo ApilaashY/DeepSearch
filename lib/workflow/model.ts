@@ -1,5 +1,8 @@
 import { ChatOllama, OllamaEmbeddings } from '@langchain/ollama';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { Logger } from '../logger';
+
+const logger = new Logger('AI MODEL');
 
 // For chat models
 // const chatModel = new ChatOllama({
@@ -10,6 +13,8 @@ import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 // });
 
 // For regular LLMs
+
+logger.log(`AI MODEL: ${process.env.AI_MODEL === 'ollama' ? 'ollama' : 'gemini'}`);
 
 export const lightModel =
   process.env.AI_MODEL === 'ollama'

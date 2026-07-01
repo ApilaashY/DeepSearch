@@ -16,7 +16,8 @@
     "db:pull": "prisma db pull",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "worker": "graphile-worker"
+    "worker": "graphile-worker",
+    "worker:prod": "set -a && . ./.server.env && set +a && NODE_OPTIONS=\"--import tsx\" npx graphile-worker -c \"$DATABASE_URL\""
   },
   "dependencies": {
     "@langchain/community": "^1.1.28",
