@@ -30,12 +30,13 @@ model Source {
 }
 
 model Topic {
-  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String
-  description String?
-  createdAt   DateTime   @default(now())
-  summary     String?
-  ai_pending  Boolean    @default(false)
-  Question    Question[]
-  Source      Source[]
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  description   String?
+  createdAt     DateTime   @default(now())
+  summary       String?
+  ai_pending    Boolean    @default(false)
+  source_locked Boolean    @default(false)
+  Question      Question[]
+  Source        Source[]
 }

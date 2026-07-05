@@ -361,7 +361,22 @@ export default function TopicPage({ id }: { id: string }) {
           </div>
 
           <div className="rounded-2xl border border-[#d8e2ef] bg-white p-5 shadow-sm">
-            <h3 className="text-xl font-semibold mb-3 text-[#102a43]">Sources</h3>
+            <div className="flex items-center gap-3 mb-3">
+              <h3 className="text-xl font-semibold text-[#102a43]">Sources</h3>
+              <div className="relative inline-block w-11 h-5">
+                <input
+                  checked={topic.source_locked}
+                  onChange={(e) => setTopic({ ...topic, source_locked: e.target.checked })}
+                  id="switch-component"
+                  type="checkbox"
+                  className="peer appearance-none w-11 h-5 bg-slate-100 rounded-full checked:bg-slate-800 cursor-pointer transition-colors duration-300"
+                />
+                <label
+                  htmlFor="switch-component"
+                  className="absolute top-0 left-0 w-5 h-5 bg-white rounded-full border border-slate-300 shadow-sm transition-transform duration-300 peer-checked:translate-x-6 peer-checked:primary cursor-pointer"
+                ></label>
+              </div>
+            </div>
             {topic.sources.length === 0 ? (
               <p className="text-sm text-[#8293a8]">No sources yet.</p>
             ) : (

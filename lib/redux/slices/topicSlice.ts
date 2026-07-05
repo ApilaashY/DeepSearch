@@ -9,6 +9,7 @@ export interface Topic {
   sources: Source[];
   summary: string;
   ai_pending: boolean;
+  source_locked: boolean;
 }
 
 export const defaultTopic: Topic = {
@@ -20,6 +21,7 @@ export const defaultTopic: Topic = {
   summary: '',
   ai_pending: false,
   type: 'topic',
+  source_locked: false,
 };
 
 export interface Question {

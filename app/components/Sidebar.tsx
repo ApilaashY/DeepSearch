@@ -23,7 +23,7 @@ export default function Sidebar() {
   }, [params.id]);
 
   return (
-    <div className="bg-[#012542] h-full p-6 w-[250px] text-white flex flex-col gap-12">
+    <div className="bg-(--primary) h-full p-6 w-[250px] text-white flex flex-col gap-12">
       {/* Title */}
       <Link href="/app" className="flex flex-col gap-1">
         <h1 className="text-3xl font-bold">SuDeep</h1>
