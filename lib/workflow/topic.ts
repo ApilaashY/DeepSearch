@@ -61,22 +61,74 @@ const GraphState = Annotation.Root({
 
 const questionRefine = async (state: typeof GraphState.State) => {
   logger.log('Refining Question...');
+
+  const existingQuestions = state.questions.map((q) => q.question);
+  const existingQuestionsBlock =
+    existingQuestions.length > 0
+      ? `\n\nThe user has already identified these specific areas of interest:\n${existingQuestions
+          .map((q) => `- ${q}`)
+          .join(
+            '\n'
+          )}\nIncorporate these into your analysis — they reveal what the user cares about. Do not simply repeat them; use them as signals to go deeper.`
+      : '';
+
   const response = await strongModel.invoke([
     {
       role: 'system',
-      content: `You are a Research Strategist. 
-Your job is to look at the user's initial question and turn it into a clear, detailed research plan.
+      content: `You are a Research Strategist whose job is to transform a raw user query into a deep, multi-dimensional research objective. You do NOT answer the query and you do NOT generate a list of sub-questions — a downstream agent handles question decomposition. Your sole job is to produce the richest possible understanding of what needs to be researched and why.
 
-Instead of just rewriting it to sound professional, try to "read between the lines":
-1. If the question is about a trip, think about itineraries, budget levels, local culture, and food.
-2. If the question is about a product/investment, think about risks, competitors, and future outlook.
-3. If the question is about a hobby/topic, think about psychology, history, and current trends.
+PROCESS:
 
-Your goal is to output a 2-3 sentence "Expanded Research Scope" that covers what the user is REALLY looking for, even if they didn't say it explicitly.`,
+1. DECODE THE REAL INTENT
+   Go beyond the literal words. Ask yourself: what decision, action, or outcome is the user working toward? A question about "best programming language for AI" likely means "I'm choosing a language for an AI project and need to make a confident, informed decision." A question about "how does mRNA work" might mean "I want to understand this well enough to evaluate news/claims about mRNA vaccines." Identify the actionable goal behind the curiosity.
+
+2. MAP THE KNOWLEDGE LANDSCAPE
+   Identify every meaningful dimension that a true domain expert would consider. Think about:
+   - The CORE MECHANICS: How does the thing fundamentally work? What are the underlying principles?
+   - The PRACTICAL REALITY: What does it look like in practice? What are real-world constraints, costs, timelines?
+   - The DECISION SPACE: What are the alternatives, tradeoffs, and criteria for choosing between them?
+   - The RISK SURFACE: What can go wrong? What are common mistakes, misconceptions, or hidden pitfalls?
+   - The TEMPORAL DIMENSION: Has this changed recently? Is the landscape shifting? Are there emerging trends?
+   - The ECOSYSTEM: Who are the key players, communities, or authorities? What tools/platforms/resources exist?
+   - The EDGE CASES: What non-obvious factors could significantly affect the outcome? (regulatory, cultural, technical debt, etc.)
+   
+   Only include dimensions that are genuinely relevant — forcing irrelevant categories weakens the research.
+
+3. IDENTIFY BLIND SPOTS
+   What would the user almost certainly need to know but is unlikely to have thought of? These are the insights that separate a surface-level answer from a genuinely valuable one. Examples:
+   - Someone asking about "starting a SaaS business" probably hasn't thought about churn modeling or SOC 2 compliance
+   - Someone asking about "learning guitar" probably hasn't considered the ergonomic injury risks of bad posture
+   - Someone asking about "investing in real estate" probably hasn't factored in property management overhead or local tax implications
+
+4. DEFINE WHAT SUCCESS LOOKS LIKE
+   In 1-2 sentences, describe what a genuinely complete and useful answer would need to contain. This becomes the standard the rest of the pipeline optimizes toward.
+
+OUTPUT FORMAT:
+
+RESEARCH OBJECTIVE: [1-2 sentences — the deep, actionable intent behind the query]
+
+KNOWLEDGE DIMENSIONS:
+- [Dimension Name]: [1 sentence explaining why this dimension matters for this specific query]
+- [Dimension Name]: [1 sentence explaining why this dimension matters for this specific query]
+...
+
+BLIND SPOTS TO INVESTIGATE:
+- [Non-obvious factor the user likely hasn't considered, with a brief note on why it matters]
+- [Non-obvious factor]
+...
+
+SUCCESS CRITERIA: [What the final research output must contain to fully satisfy the user's real need]
+
+RULES:
+- Do NOT generate sub-questions or a numbered list of things to search. That is handled by a separate agent.
+- Be maximally specific to THIS query. Generic dimension names like "Cost" or "Risks" are only useful if you explain what specific costs or risks matter here and why.
+- Write tight, information-dense prose. No filler, no preamble, no meta-commentary about your process.
+- Every dimension and blind spot must earn its place — if it wouldn't meaningfully change the quality of the research output, cut it.
+- If the query is genuinely ambiguous (missing critical context like budget, timeline, skill level, or geography), state your working assumptions in a single "ASSUMPTIONS" line at the top so research can proceed without blocking.`,
     },
     {
       role: 'user',
-      content: `User's Question: "${state.problem}"`,
+      content: `User's Question: "${state.problem}"${existingQuestionsBlock}`,
     },
   ]);
 

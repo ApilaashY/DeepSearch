@@ -19,7 +19,7 @@ logger.log(`AI MODEL: ${process.env.AI_MODEL === 'ollama' ? 'ollama' : 'gemini'}
 export const lightModel =
   process.env.AI_MODEL === 'ollama'
     ? new ChatOllama({
-        model: 'gemma4:e4b',
+        model: 'deepseek-r1:8b',
       })
     : new ChatGoogleGenerativeAI({ model: 'gemini-3.5-flash' });
 
