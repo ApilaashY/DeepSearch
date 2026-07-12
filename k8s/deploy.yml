@@ -25,10 +25,6 @@ spec:
               value: '3000'
             - name: HOSTNAME
               value: '0.0.0.0'
-            - name: DATABASE_URL
-              value: 'postgresql://postgres:postgres@host.docker.internal:54322/postgres'
-            - name: AI_MODEL
-              value: 'gemini'
 ---
 apiVersion: v1
 kind: Service
