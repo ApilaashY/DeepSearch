@@ -18,7 +18,6 @@ interface Data {
 
 interface QueryQuestion {
   question: string;
-  data: Data;
 }
 
 // --- State Definition ---
@@ -36,13 +35,14 @@ const GraphState = Annotation.Root({
         const existing = x.find((q) => q.question === question.question);
         if (!existing) {
           x.push(question);
-        } else {
-          existing.data.information = question.data.information;
-          existing.data.references = question.data.references;
         }
       }
       return x;
     },
+    default: () => [],
+  }),
+  existingSources: Annotation<string[]>({
+    reducer: (_, y) => y,
     default: () => [],
   }),
   aiCalls: Annotation<number>({
@@ -57,7 +57,38 @@ const GraphState = Annotation.Root({
     reducer: (_, y) => y,
     default: () => '',
   }),
+  vectorStore: Annotation<MemoryVectorStore>({
+    reducer: (x, _) => x,
+    default: () => new MemoryVectorStore(textEmbeddingModel),
+  }),
 });
+
+const fetchExistingSources = async (state: typeof GraphState.State) => {
+  const sources = state.existingSources;
+  const collectedData = new Set<Data>();
+
+  // Get the data for the existing sources
+  for (const source of sources) {
+    const content = await getLinkContent(source);
+    if (content) {
+      let exists = false;
+      for (const d of collectedData) {
+        if (d.references.includes(source)) {
+          exists = true;
+          break;
+        }
+      }
+      if (exists) continue;
+
+      collectedData.add({
+        information: content,
+        references: [source],
+      });
+    }
+  }
+
+  return { collectedData: Array.from(collectedData) };
+};
 
 const questionRefine = async (state: typeof GraphState.State) => {
   logger.log('Refining Question...');
@@ -213,9 +244,6 @@ const researcher = async (state: typeof GraphState.State) => {
   for (const question of questions) {
     console.log(`Researching ${i + 1} of ${questions.length} questions...`);
 
-    // Skip questions that already have data
-    if (question.data.information) continue;
-
     const properQuestion = await lightModel.invoke([
       {
         role: 'system',
@@ -293,6 +321,32 @@ const researcher = async (state: typeof GraphState.State) => {
 
   console.log('Finished Researching Internet... Collecting');
 
+  // Index all collected data
+  const textSplitter = new RecursiveCharacterTextSplitter({
+    chunkSize: 800,
+    chunkOverlap: 150,
+  });
+
+  const docsToIndex: Document[] = [];
+  for (const [index, data] of Array.from(collectedData).entries()) {
+    const chunks = await textSplitter.splitText(data.information);
+    for (const chunk of chunks) {
+      docsToIndex.push(
+        new Document({
+          pageContent: chunk,
+          metadata: { sourceIndex: index, url: data.references[0] },
+        })
+      );
+    }
+  }
+  console.log('Indexing ' + docsToIndex.length + ' new chunks');
+  await state.vectorStore.addDocuments(docsToIndex);
+
+  // Warn if no documents were added
+  if (docsToIndex.length === 0) {
+    logger.warn('No documents were added to the vector store.');
+  }
+
   return {
     collectedData: Array.from(collectedData),
     aiCalls: callCount,
@@ -305,10 +359,12 @@ This conditional edge will access the information and figure out if the data we 
 const checkSufficiency = async (state: typeof GraphState.State) => {
   console.log('Checking Sufficiency...');
 
-  // If we already have 5 sets of collected data, we have enough
-  if (state.collectedData.length >= 5) {
+  // If we already have 100 sets of collected data, we have enough
+  if (state.collectedData.length >= 100) {
     return 'synthesiser';
   }
+
+  const relevantDocs = await state.vectorStore.similaritySearch(state.problem, 100);
 
   const response = await strongModel.invoke([
     {
@@ -319,7 +375,7 @@ Output only "Yes" if it is sufficient, and "No" if it is not.`,
     },
     {
       role: 'user',
-      content: JSON.stringify(state.collectedData.map((data) => data.information)),
+      content: JSON.stringify(relevantDocs.map((data) => data.pageContent)),
     },
   ]);
 
@@ -342,35 +398,7 @@ It uses RAG (Retrieval-Augmented Generation) to handle large amounts of data.
 const synthesiser = async (state: typeof GraphState.State) => {
   logger.log('Synthesizing final report with RAG...');
 
-  const embeddings = textEmbeddingModel;
-
-  // 1. Chunk the collected data
-  const textSplitter = new RecursiveCharacterTextSplitter({
-    chunkSize: 800,
-    chunkOverlap: 150,
-  });
-
-  const docsToIndex: Document[] = [];
-  for (const [index, data] of state.collectedData.entries()) {
-    const chunks = await textSplitter.splitText(data.information);
-    for (const chunk of chunks) {
-      docsToIndex.push(
-        new Document({
-          pageContent: chunk,
-          metadata: { sourceIndex: index, url: data.references[0] },
-        })
-      );
-    }
-  }
-
-  console.log(
-    `Indexing ${docsToIndex.length} chunks from ${state.collectedData.length} sources...`
-  );
-  const vectorStore = await MemoryVectorStore.fromDocuments(docsToIndex, embeddings);
-
-  // 2. Retrieve the most relevant chunks for the original problem
-  console.log('Retrieving relevant snippets...');
-  const relevantDocs = await vectorStore.similaritySearch(state.problem, 10);
+  const relevantDocs = await state.vectorStore.similaritySearch(state.problem, 100);
 
   const context = relevantDocs
     .map((doc) => {
@@ -416,11 +444,13 @@ Tone: Professional but engaging. Avoid being overly dry or academic. Focus on pr
 
 // --- Build the Graph ---
 export const summaryResearchAgent = new StateGraph(GraphState)
+  .addNode('fetchExistingSources', fetchExistingSources)
   .addNode('questionRefine', questionRefine)
   .addNode('makeQuestions', makeQuestions)
   .addNode('researcher', researcher)
   .addNode('synthesiser', synthesiser)
-  .addEdge(START, 'questionRefine')
+  .addEdge(START, 'fetchExistingSources')
+  .addEdge('fetchExistingSources', 'questionRefine')
   .addEdge('questionRefine', 'makeQuestions')
   .addEdge('makeQuestions', 'researcher')
   .addConditionalEdges('researcher', checkSufficiency, ['synthesiser', 'makeQuestions'])

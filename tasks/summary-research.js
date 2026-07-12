@@ -11,30 +11,31 @@ export default async function summaryResearch(payload) {
   // Set pending to true
   console.log(await updateTopic(topicId, { ai_pending: true }));
 
-  logger.log('Fetching topic...');
-  // Get existing questions
-  const { questions, description } = await getTopic(topicId, {
-    description: true,
-    questions: true,
-  });
+  try {
+    logger.log('Fetching topic...');
+    // Get existing questions
+    const { questions, description, sources } = await getTopic(topicId, {
+      description: true,
+      questions: true,
+      sources: true,
+    });
 
-  logger.log(`STARTING ANALYSIS FOR QUESTION: ${description}`);
+    logger.log(`STARTING ANALYSIS FOR QUESTION: ${description}`);
 
-  // Call summary agent
-  await summaryResearchAgent.invoke({
-    problem: description,
-    questions: questions.map((q) => {
-      return {
-        question: q.title,
-        data: {
-          information: '',
-          references: [],
-        },
-      };
-    }),
-    topicId: topicId,
-  });
-
-  // Set pending back to false
-  await updateTopic(topicId, { ai_pending: false });
+    // Call summary agent
+    await summaryResearchAgent.invoke({
+      problem: description,
+      questions: questions.map((q) => {
+        return {
+          question: q.title,
+        };
+      }),
+      existingSources: sources,
+      topicId: topicId,
+    });
+  } catch (e) {
+    logger.error(`ERROR IN SUMMARY RESEARCH: ${e.message}`);
+  } finally {
+    await updateTopic(topicId, { ai_pending: false });
+  }
 }
