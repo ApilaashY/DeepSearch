@@ -16,6 +16,7 @@
     "db:pull": "prisma db pull",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
+    "db:push:server": "set -a && . ./.server.env && set +a && npx prisma db push",
     "worker": "graphile-worker",
     "worker:prod": "set -a && . ./.server.env && set +a && NODE_OPTIONS=\"--import tsx\" npx graphile-worker -c \"$DATABASE_URL\""
   },
