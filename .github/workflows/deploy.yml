@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deepsearch-deploy
+  labels:
+    app: deepsearch-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deepsearch-deploy
+  template:
+    metadata:
+      labels:
+        app: deepsearch-deploy
+    spec:
+      containers:
+        - name: deepsearch-deploy
+          image: apilaash/deepsearch-deploy:latest # The image tag you built
+          imagePullPolicy: IfNotPresent # Uses the local image if using minikube/kind/k3s
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: '3000'
+            - name: HOSTNAME
+              value: '0.0.0.0'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deepsearch-service
+  annotations:
+    service.beta.kubernetes.io/oci-load-balancer-shape: '10Mbps'
+spec:
+  type: LoadBalancer
+  selector:
+    app: deepsearch-deploy
+  ports:
+    - port: 80
+      targetPort: 3000
