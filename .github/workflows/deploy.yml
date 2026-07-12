@@ -16,11 +16,13 @@ jobs:
       # Note: For production, you will need to set up cluster authentication here
       # (e.g., Azure login, AWS credentials, GCP auth, or kubeconfig secrets)
       - name: Set up Kubeconfig
+        env:
+          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
+        if: ${{ env.KUBECONFIG_DATA != '' }}
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          echo "$KUBECONFIG_DATA" > ~/.kube/config
           chmod 600 ~/.kube/config
-        if: "${{ secrets.KUBECONFIG != '' }}"
 
       - name: Deploy to Kubernetes
         run: |
