@@ -13,17 +13,23 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Note: For production, you will need to set up cluster authentication here
-      # (e.g., Azure login, AWS credentials, GCP auth, or kubeconfig secrets)
-      - name: Set up Kubeconfig
-        env:
-          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
-        if: ${{ env.KUBECONFIG_DATA != '' }}
+      # Log in to Oracle Cloud Infrastructure (OCI) using your secrets
+      - name: Configure OCI CLI
+        uses: oracle-actions/setup-oci@v1
+        with:
+          user_ocid: ${{ secrets.OCI_USER_OCID }}
+          tenancy_ocid: ${{ secrets.OCI_TENANCY_OCID }}
+          fingerprint: ${{ secrets.OCI_FINGERPRINT }}
+          key_content: ${{ secrets.OCI_KEY_CONTENT }}
+          region: ${{ secrets.OCI_REGION }}
+
+      # Download the kubeconfig from your Oracle Kubernetes (OKE) cluster
+      - name: Get OKE Kubeconfig
         run: |
           mkdir -p ~/.kube
-          echo "$KUBECONFIG_DATA" > ~/.kube/config
-          chmod 600 ~/.kube/config
+          oci ce cluster create-kubeconfig --cluster-id ${{ secrets.OKE_CLUSTER_OCID }} --file ~/.kube/config --region ${{ secrets.OCI_REGION }} --token-version 2.0.0
 
+      # Apply your Kubernetes configuration
       - name: Deploy to Kubernetes
         run: |
           kubectl apply -f k8s/deploy.yml
