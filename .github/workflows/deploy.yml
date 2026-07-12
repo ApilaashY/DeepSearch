@@ -13,20 +13,34 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Log in to Oracle Cloud Infrastructure (OCI) using your secrets
+      # Install OCI CLI manually
+      - name: Install OCI CLI
+        run: |
+          curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh | bash -s -- --accept-all-defaults
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      # Configure OCI CLI using secrets
       - name: Configure OCI CLI
-        uses: oracle-actions/setup-oci@v1
-        with:
-          user_ocid: ${{ secrets.OCI_USER_OCID }}
-          tenancy_ocid: ${{ secrets.OCI_TENANCY_OCID }}
-          fingerprint: ${{ secrets.OCI_FINGERPRINT }}
-          key_content: ${{ secrets.OCI_KEY_CONTENT }}
-          region: ${{ secrets.OCI_REGION }}
+        run: |
+          mkdir -p ~/.oci
+          echo "[DEFAULT]" > ~/.oci/config
+          echo "user=${{ secrets.OCI_USER_OCID }}" >> ~/.oci/config
+          echo "fingerprint=${{ secrets.OCI_FINGERPRINT }}" >> ~/.oci/config
+          echo "tenancy=${{ secrets.OCI_TENANCY_OCID }}" >> ~/.oci/config
+          echo "region=${{ secrets.OCI_REGION }}" >> ~/.oci/config
+          echo "key_file=~/.oci/oci_api_key.pem" >> ~/.oci/config
+          
+          # Write the private key content safely
+          echo "${{ secrets.OCI_KEY_CONTENT }}" > ~/.oci/oci_api_key.pem
+          chmod 600 ~/.oci/config ~/.oci/oci_api_key.pem
+        env:
+          OCI_KEY_CONTENT: ${{ secrets.OCI_KEY_CONTENT }}
 
       # Download the kubeconfig from your Oracle Kubernetes (OKE) cluster
       - name: Get OKE Kubeconfig
         run: |
-          mkdir -p ~/.kube
+          # Use path to OCI CLI explicitly in case path env hasn't refreshed
+          export PATH=$PATH:$HOME/bin
           oci ce cluster create-kubeconfig --cluster-id ${{ secrets.OKE_CLUSTER_OCID }} --file ~/.kube/config --region ${{ secrets.OCI_REGION }} --token-version 2.0.0
 
       # Apply your Kubernetes configuration
