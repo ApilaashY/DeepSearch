@@ -35,6 +35,7 @@ export default async function summaryResearch(payload) {
     });
   } catch (e) {
     logger.error(`ERROR IN SUMMARY RESEARCH: ${e.message}`);
+    console.error(e);
   } finally {
     await updateTopic(topicId, { ai_pending: false });
   }
