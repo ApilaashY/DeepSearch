@@ -1,0 +1,20 @@
+FROM node:24-alpine
+
+WORKDIR /app
+
+# Copy package files and install dependencies
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Copy the rest of the application code
+COPY . .
+
+# Set environment variables
+ENV NODE_ENV=production
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Command to run Graphile Worker
+# Executes prisma db push before launching graphile-worker
+CMD ["sh", "-c", "npx prisma db push && NODE_OPTIONS=\"--import tsx\" npx graphile-worker -c \"$DATABASE_URL\""]

@@ -71,7 +71,7 @@ export default function Sidebar() {
 
   return (
     <>
-      <div className="bg-(--primary) h-full p-6 w-[300px] text-white flex flex-col gap-12 max-md:hidden">
+      <div className="bg-(--primary) h-full p-6 w-75 text-white flex flex-col gap-12 max-md:hidden">
         <InnerSidebar
           topics={topics}
           currentId={params.id ? String(params.id).replace('t_', '') : undefined}
@@ -90,7 +90,7 @@ export default function Sidebar() {
         />
       </div>
       <div
-        className={`absolute md:hidden bg-(--primary) h-full p-6 w-[500px] max-w-[70vw] text-white flex flex-col gap-12 z-20 ${
+        className={`absolute md:hidden bg-(--primary) h-full p-6 w-125 max-w-[70vw] text-white flex flex-col gap-12 z-20 ${
           showMobileBar ? '' : '-translate-x-full'
         } transition-transform duration-300 ease-in-out`}
       >

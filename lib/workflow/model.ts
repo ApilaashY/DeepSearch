@@ -16,18 +16,25 @@ const logger = new Logger('AI MODEL');
 
 logger.log(`AI MODEL: ${process.env.AI_MODEL === 'ollama' ? 'ollama' : 'gemini'}`);
 
+const ollamaBaseUrl = process.env.OLLAMA_BASE_URL || 'http://host.docker.internal:11434';
+
 export const lightModel =
   process.env.AI_MODEL === 'ollama'
     ? new ChatOllama({
         model: 'deepseek-r1:8b',
+        baseUrl: ollamaBaseUrl,
       })
     : new ChatGoogleGenerativeAI({ model: 'gemini-3.5-flash' });
 
 export const strongModel =
   process.env.AI_MODEL === 'ollama'
     ? new ChatOllama({
-        model: 'qwen3:30b', //'deepseek-r1:32b',
+        model: 'qwen3:30b',
+        baseUrl: ollamaBaseUrl,
       })
     : new ChatGoogleGenerativeAI({ model: 'gemini-3.1-flash-lite' });
 
-export const textEmbeddingModel = new OllamaEmbeddings({ model: 'nomic-embed-text' });
+export const textEmbeddingModel = new OllamaEmbeddings({
+  model: 'nomic-embed-text',
+  baseUrl: ollamaBaseUrl,
+});

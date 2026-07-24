@@ -9,11 +9,8 @@ RUN npm ci
 # Copy the rest of the application code
 COPY . .
 
-# Remove the env file and replace it with the server env
-RUN rm -f .env
-RUN mv .server.env .env
-
-# Set environment variables (available during build and runtime)
+# Set environment variables
+ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
@@ -26,5 +23,5 @@ RUN npm run build
 # Expose the default port
 EXPOSE 3000
 
-# Run the next start command to serve the application
-CMD ["npm", "run", "start"]
+# Run prisma db push to sync DB schema and serve the application
+CMD ["sh", "-c", "npx prisma db push && npm run start"]
