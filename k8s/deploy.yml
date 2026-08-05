@@ -17,7 +17,7 @@ spec:
       containers:
         - name: deepsearch-deploy
           image: docker.io/apilaash/deepsearch-deploy:latest # The image tag you built
-          imagePullPolicy: IfNotPresent # Uses the local image if using minikube/kind/k3s
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
           env:
@@ -31,7 +31,9 @@ kind: Service
 metadata:
   name: deepsearch-service
   annotations:
-    service.beta.kubernetes.io/oci-load-balancer-shape: '10Mbps'
+    service.beta.kubernetes.io/oci-load-balancer-shape: 'flexible'
+    service.beta.kubernetes.io/oci-load-balancer-shape-flex-min: '10'
+    service.beta.kubernetes.io/oci-load-balancer-shape-flex-max: '10'
 spec:
   type: LoadBalancer
   selector:
